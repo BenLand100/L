@@ -1,13 +1,41 @@
 #include "parser.h"
 #include "listops.h"
 #include "primitives.h"
+#include "binmap.h"
+#include <cctype>
 
-bool isDigit(char c) {
-    return c >= '0' && c <= '9';
+T_SYMBOL hash(char *sym) {
+    T_SYMBOL hval = 0xAAAAAAAA;
+    for (int i = 0; sym[i]; i++) hval ^= ((T_SYMBOL)sym[i]) << ((4*i)%24);
+    return hval;
 }
 
-T_SYMBOL intern(char *sym) {
-    return 0; //all symbols are the same for now
+NODE *sym_map = binmap(newSYMBOL(hash("NIL")),newSTRING("NIL"));
+
+T_SYMBOL intern(char *c_str) {
+    c_str = strdup(c_str);
+    for (int i = 0; c_str[i]; i++) c_str[i] = toupper(c_str[i]);
+    debug("intern: %s %i\n",c_str,hash(c_str));
+    SYMBOL *sym = newSYMBOL(hash(c_str));
+    STRING *str = newSTRING(c_str);
+    NODE *entry;
+    while (entry = find(sym,sym_map)) {
+        debugVal(entry,"matching: ");
+        if (cmpSTRING((STRING*)entry->addr,str)) {
+            decRef(entry);
+            sym->sym++;
+        } else {
+            break;
+        }
+    }
+    if (!entry) {
+        debug("adding symbol: %s\n",c_str);
+        put(sym,str,sym_map);
+    }
+    decRef(entry);
+    decRef(sym);
+    decRef(str);
+    return sym->sym;
 }
 
 NODE* parse(char *&exp) {
@@ -15,12 +43,17 @@ NODE* parse(char *&exp) {
     NODE *head = NIL;
     while (*exp) {
         switch (*(exp++)) {
+            case '\'':
+                pushList(newNODE(newPRIMFUNC(PRIM_QUOTE),parse(exp)),head);
             case '(':
                 pushList(parse(exp),head);
                 continue;
             case ')':
                 debugVal(head,"ParseList: ");
                 return reverseList(head);
+            case '\n':
+            case '\r':
+            case '\t':
             case ' ':
                 continue;
             default: {
@@ -41,7 +74,7 @@ NODE* parse(char *&exp) {
                             pushList(newPRIMFUNC(PRIM_SUB),head);
                             break;
                         }
-                        if (!isDigit(sym[1])) {
+                        if (!isdigit(sym[1])) {
                             pushList(newSYMBOL(intern(sym)),head);
                             break;
                         }  
@@ -61,7 +94,7 @@ NODE* parse(char *&exp) {
                             while (*scn) {
                                 if (*scn == '.') { 
                                     real = true;
-                                } else if (!isDigit(*scn)) {
+                                } else if (!isdigit(*scn)) {
                                     error("Malformed number character %c",*scn);
                                 }
                                 scn++;
@@ -81,6 +114,16 @@ NODE* parse(char *&exp) {
                     case '/':
                         if (!sym[1]) {
                             pushList(newPRIMFUNC(PRIM_DIV),head);
+                            break;
+                        }
+                    case 'l':
+                        if (!strcmp("list",sym)) {
+                            pushList(newPRIMFUNC(PRIM_LIST),head);
+                            break;
+                        }
+                    case 'q':
+                        if (!strcmp("quote",sym)) {
+                            pushList(newPRIMFUNC(PRIM_QUOTE),head);
                             break;
                         }
                     default:
@@ -133,6 +176,9 @@ void print(VALUE *val) {
             return;
         case ID_SYMBOL:
             printf("SYMBOL_%i ",((SYMBOL*)val)->sym);
+            return;
+        case ID_STRING:
+            printf("\"%s\"",((STRING*)val)->str);
             return;
         case ID_PRIMFUNC:
             printf("PRIMFUNC_%i ",((PRIMFUNC*)val)->id);

@@ -1,14 +1,42 @@
 #include "lisp.h"
 #include "primitives.h"
 
+void freeVALUE(VALUE *val) {
+    switch (val->type) {
+        case ID_NODE:
+            decRef(((NODE*)val)->data);
+            decRef(((NODE*)val)->addr);
+            break;
+        case ID_STRING:
+            free(((STRING*)val)->str);
+            break;
+    }
+    free(val);
+}
+
 VALUE* deep_copy(VALUE *val) {
-    return val; //for testing don't worry about copying
+    if (!val) return NIL;
+    switch (val->type) {
+        case ID_NODE:
+            return (VALUE*)newNODE(deep_copy(((NODE*)val)->data),deep_copy(((NODE*)val)->addr));
+        case ID_SYMBOL:
+            return (VALUE*)newSYMBOL(((SYMBOL*)val)->sym);
+        case ID_INTEGER:
+            return (VALUE*)newINTEGER(((INTEGER*)val)->val);
+        case ID_REAL:
+            return (VALUE*)newREAL(((REAL*)val)->val);
+        case ID_STRING:
+            return (VALUE*)newSTRING(strdup(((STRING*)val)->str));
+        case ID_PRIMFUNC:
+            return (VALUE*)newPRIMFUNC(((PRIMFUNC*)val)->id);
+    }
 }
 
 VALUE* resolve(SYMBOL *sym, NODE *scope) {
     debug("Resolving: %i\n", sym->sym);
     while (scope) {
         if (asSYMBOL(asNODE(scope->data)->data)->sym == sym->sym) {
+            incRef(((NODE*)scope->data)->addr);
             return ((NODE*)scope->data)->addr;
         }
         scope = asNODE(scope->addr);
@@ -17,6 +45,7 @@ VALUE* resolve(SYMBOL *sym, NODE *scope) {
 }
 
 NODE* bind(SYMBOL *sym, VALUE *val, NODE *scope) {
+    incRef(val);
     return newNODE(newNODE(sym,val),scope);
 }
 
@@ -69,27 +98,14 @@ VALUE* evaluate(VALUE *val, NODE *scope) {
         case ID_NODE: {
             VALUE *func = evaluate(((NODE*)val)->data,scope);
             NODE *args = asNODE(((NODE*)val)->addr);
-            return funcall(func,args,scope);
+            VALUE *res = funcall(func,args,scope);
+            decRef(func);
+            return res;
         }
-        case ID_SYMBOL: {
+        case ID_SYMBOL:
             return resolve(((SYMBOL*)val),scope);
-        }
-        default: {
-            return deep_copy(val);
-        }
-    }
-}
-
-int main() {
-    char *prog = strdup("( + 3 5 ) ( - 3 5 ) ( * 3 5 ) ( / 3.0 5 )");
-    NODE *forms = parse(prog);
-    printf("Total Forms = %i\n",length(forms));
-    while (forms) {
-        print(forms->data); printf("\n");
-        NODE *static_scope = NULL;
-        static_scope = bind(newSYMBOL(intern("+")),asVALUE(newPRIMFUNC(PRIM_ADD)),static_scope);
-        VALUE *val = evaluate(asVALUE(forms->data),static_scope);
-        printVal(val);
-        forms = asNODE(forms->addr);
+        default:
+            incRef(val);
+            return val;
     }
 }

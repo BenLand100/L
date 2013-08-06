@@ -22,6 +22,7 @@
     inline _type* new ## _type() { \
         _type *val = (_type*)malloc(sizeof(_type));\
         val->type = ID_ ## _type; \
+        val->refc = 1; \
         return val; \
     } \
     inline _type* new ## _type(T_ ## _type _ ## _var) { \
@@ -29,14 +30,21 @@
         val->_var = _ ## _var; \
         return val; \
     } 
-    
-#define def_type(_type,_var) \
+
+#define test_cmp(_type,_var,_cmp_cond) \
+    inline int cmp ## _type(_type *a, _type *b) { \
+        return (_cmp_cond); \
+    }    
+
+#define def_type(_type,_var,_cmp_cond) \
     typedef struct { \
         T_TYPE type; \
+        size_t refc; \
         T_ ## _type _var; \
     } _type; \
     new_type(_type,_var) \
     as_type(_type) \
+    test_cmp(_type,_var,_cmp_cond)
 
 #define ID_NODE      0x00
 #define ID_SYMBOL    0x01
@@ -44,7 +52,6 @@
 #define ID_REAL      0x03
 #define ID_STRING    0x04
 #define ID_PRIMFUNC  0x05
-#define ID_DATA      0x06
 
 #define NIL NULL
 
@@ -58,12 +65,17 @@ typedef void* T_DATA;
 
 typedef struct {
     T_TYPE type;
+    size_t refc;
 } VALUE;
+#define incRef(val) if (val) (++((VALUE*)val)->refc)
+#define decRef(val) if (val) if (--((VALUE*)val)->refc) freeVALUE((VALUE*)val);
 #define asVALUE(val) ((VALUE*)val)
+void freeVALUE(VALUE *val);
 VALUE* deep_copy(VALUE *val);
 
 typedef struct {
     T_TYPE type;
+    size_t refc;
     VALUE *addr,*data;    
 } NODE;
 
@@ -75,6 +87,7 @@ inline NODE* asNODE(void *val) {
 inline NODE* newNODE() {
     NODE *node = (NODE*)malloc(sizeof(NODE));
     node->type = ID_NODE;
+    node->refc = 1;
     return node;
 }
 
@@ -85,11 +98,37 @@ inline NODE* newNODE(void *data, void *addr) {
     return node;
 }
 
-def_type(SYMBOL,sym);
-def_type(INTEGER,val);
-def_type(REAL,val);
-def_type(PRIMFUNC,id);
-def_type(STRING,str);
+inline int cmpNODE(NODE *a, NODE *b) {
+    return ((size_t)a->data + (size_t)b->addr) - ((size_t)b->data + (size_t)b->addr);
+}
+
+def_type(SYMBOL,sym,(int)a->sym - (int)b->sym);
+def_type(INTEGER,val,a->val - b->val);
+def_type(REAL,val,a->val - b->val);
+def_type(PRIMFUNC,id,(int)a->id - (int)b->id);
+def_type(STRING,str,strcmp(a->str,b->str));
+
+inline int cmpVALUE(void *_a, void *_b) {
+    VALUE *a = asVALUE(_a);
+    VALUE *b = asVALUE(_b);
+    if (a && b && a->type == b->type) {
+        switch (a->type) {
+            case ID_NODE:
+                return cmpNODE((NODE*)a,(NODE*)b);
+            case ID_SYMBOL:
+                return cmpSYMBOL((SYMBOL*)a,(SYMBOL*)b);
+            case ID_INTEGER:
+                return cmpINTEGER((INTEGER*)a,(INTEGER*)b);
+            case ID_REAL:
+                return cmpREAL((REAL*)a,(REAL*)b);
+            case ID_STRING:
+                return cmpSTRING((STRING*)a,(STRING*)b);
+            case ID_PRIMFUNC:
+                return cmpPRIMFUNC((PRIMFUNC*)a,(PRIMFUNC*)b);
+        }
+    }
+    return false;
+}
 
 #include "listops.h"
 #include "parser.h"
