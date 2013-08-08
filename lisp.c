@@ -1,4 +1,5 @@
 #include "lisp.h"
+#include "scope.h"
 #include "primitives.h"
 
 void freeVALUE(VALUE *val) {
@@ -32,61 +33,89 @@ VALUE* deep_copy(VALUE *val) {
     }
 }
 
-VALUE* resolve(SYMBOL *sym, NODE *scope) {
-    debug("Resolving: %i\n", sym->sym);
-    while (scope) {
-        if (asSYMBOL(asNODE(scope->data)->data)->sym == sym->sym) {
-            incRef(((NODE*)scope->data)->addr);
-            return ((NODE*)scope->data)->addr;
+void printList(NODE *list) {
+    if (list->addr) {
+        if (list->addr->type == ID_NODE) {
+            print(list->data);
+            printList((NODE*)list->addr);
+        } else {
+            print(asVALUE(list));
         }
-        scope = asNODE(scope->addr);
+    } else {    
+        print(list->data);
     }
-    return NIL;
 }
 
-NODE* bind(SYMBOL *sym, VALUE *val, NODE *scope) {
-    incRef(val);
-    return newNODE(newNODE(sym,val),scope);
-}
-
-NODE* bindMany(NODE *vars, NODE *vals, NODE *scope) {
-    while (vars && vals) {
-        scope = bind(asSYMBOL(vars->data),vals->data,scope);
-        vars = asNODE(vars->addr);
-        vals = asNODE(vals->addr);
+void print(VALUE *val) {
+    if (!val) {
+        printf("NIL ");
+        return;
     }
-    return scope;
+    switch (val->type) {
+        case ID_NODE:
+            printf("( ");
+            if (((NODE*)val)->addr && ((NODE*)val)->addr->type != ID_NODE) {
+                print(((NODE*)val)->data);
+                printf(". ");
+                print(((NODE*)val)->addr);
+            } else {
+                printList(((NODE*)val));
+            }
+            printf(") ");
+            return;
+        case ID_INTEGER:
+            printf("%i ", ((INTEGER*)val)->val);
+            return;
+        case ID_REAL:
+            printf("%f ", ((REAL*)val)->val);
+            return;
+        case ID_SYMBOL:
+            printf("SYMBOL_%i ",((SYMBOL*)val)->sym);
+            return;
+        case ID_STRING:
+            printf("\"%s\"",((STRING*)val)->str);
+            return;
+        case ID_PRIMFUNC:
+            printf("PRIMFUNC_%i ",((PRIMFUNC*)val)->id);
+            return;
+    }
 }
 
-VALUE* funcall(VALUE *func, NODE *args, NODE *parent_scope) {
+#define prim_func(name) { \
+    NODE *args_eval = list(args,scope); \
+    VALUE *res = (VALUE*)name(args_eval,scope); \
+    decRef(args_eval); \
+    return res; \
+}
+
+#define prim_macro(name) return (VALUE*)name(args,scope)
+
+VALUE* funcall(VALUE *func, NODE *args, NODE *scope) {
     debugVal(func,"Funcall: ");
     failNIL(func,"NIL cannot be invoked");
     switch (func->type) {
         case ID_PRIMFUNC:
             switch (((PRIMFUNC*)func)->id) {
-                case PRIM_LIST:
-                    return asVALUE(list(args,parent_scope));
-                case PRIM_QUOTE:
-                    return quote(args,parent_scope);
-                case PRIM_ADDR:
-                    return addr(list(args,parent_scope),parent_scope);
-                case PRIM_DATA:
-                    return data(list(args,parent_scope),parent_scope);
-                case PRIM_ADD:
-                    return add(list(args,parent_scope),parent_scope);
-                case PRIM_SUB:
-                    return sub(list(args,parent_scope),parent_scope);
-                case PRIM_MUL:
-                    return mul(list(args,parent_scope),parent_scope);
-                case PRIM_DIV:
-                    return div(list(args,parent_scope),parent_scope);
-                default:
-                    error("Unhandled PRIMFUNC");
+                case PRIM_LIST: prim_macro(list);
+                case PRIM_QUOTE: prim_macro(quote);
+                case PRIM_ADDR: prim_func(addr);
+                case PRIM_DATA: prim_func(data);
+                case PRIM_ADD: prim_func(add);
+                case PRIM_SUB: prim_func(sub);
+                case PRIM_MUL: prim_func(mul);
+                case PRIM_DIV: prim_func(div);
+                default: error("Unhandled PRIMFUNC");
             }
-        case ID_NODE:
+        case ID_NODE: {
             NODE *vars = asNODE(((NODE*)func)->data);
-            NODE *scope = bindMany(vars,list(args,parent_scope),parent_scope);
-            return evaluate(((NODE*)func)->addr,scope);
+            NODE *args_eval = list(args,scope);
+            scope = pushScope(scope);
+            bindMany(vars,args_eval,scope);
+            decRef(args_eval);
+            VALUE *res = evaluate(((NODE*)func)->addr,scope);
+            scope = popScope(scope);
+            return res;
+        }
     }
     error("Malfored function invoke");
 }
@@ -99,6 +128,7 @@ VALUE* evaluate(VALUE *val, NODE *scope) {
             VALUE *func = evaluate(((NODE*)val)->data,scope);
             NODE *args = asNODE(((NODE*)val)->addr);
             VALUE *res = funcall(func,args,scope);
+            debugVal(res,"Func result: ");
             decRef(func);
             return res;
         }

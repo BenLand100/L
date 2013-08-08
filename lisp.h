@@ -130,9 +130,7 @@ inline int cmpVALUE(void *_a, void *_b) {
     return false;
 }
 
-#include "listops.h"
-#include "parser.h"
-
 VALUE* evaluate(VALUE *val, NODE *scope);
+void print(VALUE *val);
 
 #endif

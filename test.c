@@ -1,15 +1,15 @@
 #include "lisp.h"
-#include "binmap.h"
+#include "parser.h"
+#include "listops.h"
 
-int main() {
-    /*NODE *map = binmap(newINTEGER(3),newSTRING("root"));
-    put(newINTEGER(1),newSTRING("a"),map);
-    put(newINTEGER(0),newSTRING("b"),map);
-    put(newINTEGER(2),newSTRING("b"),map);
-    put(newINTEGER(5),newSTRING("a"),map);
-    put(newINTEGER(4),newSTRING("b"),map);
-    put(newINTEGER(6),newSTRING("b"),map);
-    printVal(map);    
-    printVal(find(newINTEGER(1),map));*/
-    printf("inters = %i %i",intern("NIL"),intern("x"));
+int main(int argc, char **argv) {
+    NODE *forms = parseForms("(+ 1 (* 2 6) (- 7 3))");
+    int len = list_length(forms);
+    printf("Evaluating %i forms\n",len);
+    for (NODE *form = forms; form; form = (NODE*)form->addr) {
+        VALUE *val = evaluate(form->data,NIL);
+        printVal(val);
+        decRef(val);
+    }
+    decRef(forms);
 }

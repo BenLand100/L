@@ -1,3 +1,3 @@
 #!/bin/bash
 
-g++ *.c -O3 -o lisp
+g++ *.c -ggdb -o lisp

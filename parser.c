@@ -19,7 +19,7 @@ T_SYMBOL intern(char *c_str) {
     SYMBOL *sym = newSYMBOL(hash(c_str));
     STRING *str = newSTRING(c_str);
     NODE *entry;
-    while (entry = find(sym,sym_map)) {
+    while (entry = binmap_find(sym,sym_map)) {
         debugVal(entry,"matching: ");
         if (cmpSTRING((STRING*)entry->addr,str)) {
             decRef(entry);
@@ -30,7 +30,7 @@ T_SYMBOL intern(char *c_str) {
     }
     if (!entry) {
         debug("adding symbol: %s\n",c_str);
-        put(sym,str,sym_map);
+        binmap_put(sym,str,sym_map);
     }
     decRef(entry);
     decRef(sym);
@@ -44,13 +44,13 @@ NODE* parse(char *&exp) {
     while (*exp) {
         switch (*(exp++)) {
             case '\'':
-                pushList(newNODE(newPRIMFUNC(PRIM_QUOTE),parse(exp)),head);
+                list_push(newNODE(newPRIMFUNC(PRIM_QUOTE),parse(exp)),head);
             case '(':
-                pushList(parse(exp),head);
+                list_push(parse(exp),head);
                 continue;
             case ')':
                 debugVal(head,"ParseList: ");
-                return reverseList(head);
+                return list_reverse(head);
             case '\n':
             case '\r':
             case '\t':
@@ -66,16 +66,16 @@ NODE* parse(char *&exp) {
                 switch (sym[0]) {
                     case '+':
                         if (!sym[1]) {
-                            pushList(newPRIMFUNC(PRIM_ADD),head);
+                            list_push(newPRIMFUNC(PRIM_ADD),head);
                             break;
                         }
                     case '-':
                         if (!sym[1]) {
-                            pushList(newPRIMFUNC(PRIM_SUB),head);
+                            list_push(newPRIMFUNC(PRIM_SUB),head);
                             break;
                         }
                         if (!isdigit(sym[1])) {
-                            pushList(newSYMBOL(intern(sym)),head);
+                            list_push(newSYMBOL(intern(sym)),head);
                             break;
                         }  
                     case '0':
@@ -100,34 +100,34 @@ NODE* parse(char *&exp) {
                                 scn++;
                             }
                             if (real) {
-                                pushList(newREAL(atof(sym)),head);
+                                list_push(newREAL(atof(sym)),head);
                             } else {
-                                pushList(newINTEGER(atoi(sym)),head);
+                                list_push(newINTEGER(atoi(sym)),head);
                             }
                         }
                         break;
                     case '*':
                         if (!sym[1]) {
-                            pushList(newPRIMFUNC(PRIM_MUL),head);
+                            list_push(newPRIMFUNC(PRIM_MUL),head);
                             break;
                         }
                     case '/':
                         if (!sym[1]) {
-                            pushList(newPRIMFUNC(PRIM_DIV),head);
+                            list_push(newPRIMFUNC(PRIM_DIV),head);
                             break;
                         }
                     case 'l':
                         if (!strcmp("list",sym)) {
-                            pushList(newPRIMFUNC(PRIM_LIST),head);
+                            list_push(newPRIMFUNC(PRIM_LIST),head);
                             break;
                         }
                     case 'q':
                         if (!strcmp("quote",sym)) {
-                            pushList(newPRIMFUNC(PRIM_QUOTE),head);
+                            list_push(newPRIMFUNC(PRIM_QUOTE),head);
                             break;
                         }
                     default:
-                        pushList(newSYMBOL(intern(sym)),head);
+                        list_push(newSYMBOL(intern(sym)),head);
                         break;
                  }
                  *exp = old;
@@ -135,53 +135,13 @@ NODE* parse(char *&exp) {
              }
         }
     }
-    return reverseList(head,NIL);
+    return list_reverse(head,NIL);
 }
 
-void printList(NODE *list) {
-    if (list->addr) {
-        if (list->addr->type == ID_NODE) {
-            print(list->data);
-            printList((NODE*)list->addr);
-        } else {
-            print(asVALUE(list));
-        }
-    } else {    
-        print(list->data);
-    }
-}
-
-void print(VALUE *val) {
-    if (!val) {
-        printf("NIL ");
-        return;
-    }
-    switch (val->type) {
-        case ID_NODE:
-            printf("( ");
-            if (((NODE*)val)->addr && ((NODE*)val)->addr->type != ID_NODE) {
-                print(((NODE*)val)->data);
-                printf(". ");
-                print(((NODE*)val)->addr);
-            } else {
-                printList(((NODE*)val));
-            }
-            printf(") ");
-            return;
-        case ID_INTEGER:
-            printf("%i ", ((INTEGER*)val)->val);
-            return;
-        case ID_REAL:
-            printf("%f ", ((REAL*)val)->val);
-            return;
-        case ID_SYMBOL:
-            printf("SYMBOL_%i ",((SYMBOL*)val)->sym);
-            return;
-        case ID_STRING:
-            printf("\"%s\"",((STRING*)val)->str);
-            return;
-        case ID_PRIMFUNC:
-            printf("PRIMFUNC_%i ",((PRIMFUNC*)val)->id);
-            return;
-    }
+NODE* parseForms(char *exp) {
+    char *dup = strdup(exp);
+    char *org = dup;
+    NODE *forms = parse(dup);
+    free(org);
+    return forms;
 }

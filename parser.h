@@ -4,7 +4,6 @@
 #include "lisp.h"
 
 T_SYMBOL intern(char *sym);
-NODE* parse(char *&exp);
-void print(VALUE *val);
+NODE* parseForms(char *exp);
 
 #endif

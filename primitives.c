@@ -20,6 +20,7 @@ VALUE* addr(NODE *args, NODE *scope) {
 }
 
 VALUE* add(NODE *args, NODE *scope) {
+    debugVal(args,"add: ");
     bool real = false;
     T_REAL accum_r = 0;
     T_INTEGER accum_i = 0;
@@ -45,6 +46,7 @@ VALUE* add(NODE *args, NODE *scope) {
 }
 
 VALUE* mul(NODE *args, NODE *scope) {
+    debugVal(args,"mul: ");
     bool real = false;
     T_REAL accum_r = 1.0;
     T_INTEGER accum_i = 1;
@@ -70,6 +72,7 @@ VALUE* mul(NODE *args, NODE *scope) {
 }
 
 VALUE* sub(NODE *args, NODE *scope) {
+    debugVal(args,"sub: ");
     bool real = false;
     T_REAL accum_r;
     T_INTEGER accum_i;
@@ -80,6 +83,7 @@ VALUE* sub(NODE *args, NODE *scope) {
     } else {
         accum_i = asINTEGER(args->data)->val;
     }
+    args = asNODE(args->addr);
     while (args) {
         failNIL(args->data,"NIL is not a number");
         if (real) {
@@ -102,6 +106,7 @@ VALUE* sub(NODE *args, NODE *scope) {
 }
 
 VALUE* div(NODE *args, NODE *scope) {
+    debugVal(args,"div: ");
     bool real = false;
     T_REAL accum_r;
     T_INTEGER accum_i;
@@ -112,6 +117,7 @@ VALUE* div(NODE *args, NODE *scope) {
     } else {
         accum_i = asINTEGER(args->data)->val;
     }
+    args = asNODE(args->addr);
     while (args) {
         failNIL(args->data,"NIL is not a number");
         if (real) {

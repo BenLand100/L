@@ -15,7 +15,7 @@ NODE* binmap(void *key, void *val) {
     return newNODE(newNODE(key,val),newNODE(NIL,NIL));
 }
 
-NODE* find(void *key, NODE *_binmap) {
+NODE* binmap_find(void *key, NODE *_binmap) {
     if (!_binmap) return NIL;
     int cmp = cmpVALUE(asVALUE(key),binmap_key(_binmap));
     if (!cmp) {
@@ -23,13 +23,13 @@ NODE* find(void *key, NODE *_binmap) {
         incRef(entry);
         return entry;
     } else if (cmp > 0) {
-        return find(key,binmap_right(_binmap));
+        return binmap_find(key,binmap_right(_binmap));
     } else {
-        return find(key,binmap_left(_binmap));
+        return binmap_find(key,binmap_left(_binmap));
     }
 }
 
-void put(void *key, void *val, NODE *_binmap) {
+void binmap_put(void *key, void *val, NODE *_binmap) {
     failNIL(binmap,"BINMAP is NIL");
     int cmp = cmpVALUE(asVALUE(key),binmap_key(_binmap));
     if (!cmp) {
@@ -37,14 +37,14 @@ void put(void *key, void *val, NODE *_binmap) {
         binmap_val(_binmap) = asVALUE(val);
     } else if (cmp > 0) {
         if (binmap_right(_binmap)) { 
-            put(key,val,binmap_right(_binmap));
+            binmap_put(key,val,binmap_right(_binmap));
         } else {
             decRef(binmap_tree(_binmap)->addr);
             binmap_tree(_binmap)->addr = asVALUE(binmap(key,val));
         }
     } else {
         if (binmap_left(_binmap)) {
-            put(key,val,binmap_left(_binmap));
+            binmap_put(key,val,binmap_left(_binmap));
         } else {
             decRef(binmap_tree(_binmap)->data);
             binmap_tree(_binmap)->data = asVALUE(binmap(key,val));
