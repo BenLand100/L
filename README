@@ -1,0 +1,9 @@
+L is a toy project to implement a lisp-lisp language in C. The objective here
+is to end up with a language with simple evaluation rules (lisp.c/lisp.h) and
+simple primitive operations (primitives.c/primitives.h) where the code and data
+are made of dual pointers (NODE) often referred to as "cons cells" in other 
+dialects. This amounts to writing a virtual machine to evaluate cons cells (this
+project) which could be easily ported to any language or architecture. Source is
+released under GPLv3.
+
+~Benjamin J. Land a.k.a. BenLand100
