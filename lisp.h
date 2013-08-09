@@ -93,11 +93,11 @@ typedef struct {
 
 #ifdef GC_DEBUG
     #define incRef(val) if (val) { \
-        debug("incref(%i)\n",(int)((VALUE*)val)->refc); \
+        debug("incref(%p):%u\n",(void*)val,((VALUE*)val)->refc); \
         ++(((VALUE*)val)->refc); \
     }
     #define decRef(val) if (val) { \
-        debug("decref(%i)\n",(int)((VALUE*)val)->refc); \
+        debug("decref(%p):%u\n",(void*)val,(int)((VALUE*)val)->refc); \
         if (--(((VALUE*)val)->refc) == 0) { \
             debugVal(val,"free: "); \
             freeVALUE((VALUE*)val); \

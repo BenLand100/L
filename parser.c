@@ -60,7 +60,9 @@ void parser_init() {
 const char* prim_str(PRIMFUNC *prim) {
     NODE *entry = binmap_find(prim,literal_name_map);
     if (entry) {
-        return (const char*) ((STRING*)entry->addr)->str;
+        const char* str = ((STRING*)entry->addr)->str;
+        decRef(entry);
+        return str;
     } else {
         return NIL;
     }
@@ -69,7 +71,9 @@ const char* prim_str(PRIMFUNC *prim) {
 const char* sym_str(SYMBOL *sym) {
     NODE *entry = binmap_find(sym,sym_map);
     if (entry) {
-        return (const char*) ((STRING*)entry->addr)->str;
+        const char* str = ((STRING*)entry->addr)->str;
+        decRef(entry);
+        return str;
     } else {
         return NIL;
     }

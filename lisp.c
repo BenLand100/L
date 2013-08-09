@@ -172,7 +172,6 @@ VALUE* evaluate(VALUE *val, NODE *scope) {
         }
         case ID_SYMBOL: {
             VALUE *v = scope_resolve(((SYMBOL*)val),scope);
-            decRef(val);
             return v;
         }
         default:
