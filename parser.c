@@ -188,6 +188,7 @@ NODE* parse(char **exp) {
                         incRef(literal->addr);
                         head = last;
                         list_push(literal->addr,&head);
+                        decRef(literal);
                     }
                  }
                  debugVal(head,"parsed: ");

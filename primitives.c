@@ -51,6 +51,7 @@ VALUE* setd(NODE *args, NODE *scope) {
     failNIL(n,"NIL is not a NODE");
     decRef(n->data);
     incRef(v);
+    incRef(v);
     n->data = v;
     return v;
 }
@@ -61,6 +62,7 @@ VALUE* seta(NODE *args, NODE *scope) {
     VALUE *v = asNODE(args->addr)->data;
     failNIL(n,"NIL is not a NODE");
     decRef(n->addr);
+    incRef(v);
     incRef(v);
     n->addr = v;
     return v;

@@ -18,15 +18,16 @@
  */
 
 #include "lisp.h"
+#include "scope.h"
 #include "parser.h"
 #include "listops.h"
 
 // "('((x y) (+ x y)) 5 7)"
 
 int main(int argc, char **argv) {
-    NODE *forms = parseForms("(((lambda (z) (lambda (x y) (+ x y z))) 5) 3 7) ");
+    NODE *forms = parseForms("(seta (ref f) ((lambda (z) (lambda (x y) (+ x y z))) 5)) (f 3 7)");
     NODE *scope = scope_push(NIL);
-    //scope_bind(newSYMBOL(intern("x")),newINTEGER(4),scope);
+    scope_bind(newSYMBOL(intern("f")),NIL,scope);
     int len = list_length(forms);
     printf("Evaluating %i forms\n",len);
     debugVal(forms,"forms: ");

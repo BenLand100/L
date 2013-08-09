@@ -75,16 +75,23 @@ void print(VALUE *val) {
     }
     switch (val->type) {
         case ID_NODE:
-            printf("( ");
-            if (((NODE*)val)->addr && ((NODE*)val)->addr->type != ID_NODE) {
-                print(((NODE*)val)->data);
-                printf(". ");
-                print(((NODE*)val)->addr);
-            } else {
-                printList(((NODE*)val));
+            switch (((NODE*)val)->datatype) {
+                case DATA_NODE:
+                case DATA_FUNCTION:
+                    printf("( ");
+                    if (((NODE*)val)->addr && ((NODE*)val)->addr->type != ID_NODE) {
+                        print(((NODE*)val)->data);
+                        printf(". ");
+                        print(((NODE*)val)->addr);
+                    } else {
+                        printList(((NODE*)val));
+                    }
+                    printf(") ");
+                    return;
+                case DATA_SCOPE:
+                    printf("SCOPE@%p ",(void*)val);
+                    return;
             }
-            printf(") ");
-            return;
         case ID_INTEGER:
             printf("%i ", ((INTEGER*)val)->val);
             return;
@@ -118,7 +125,7 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
     switch (func->type) {
         case ID_PRIMFUNC:
             switch (((PRIMFUNC*)func)->id) {
-                case PRIM_LAMBDA: { incRef(args); incRef(scope); return newNODE(scope,args); }
+                case PRIM_LAMBDA: { incRef(args); incRef(scope); return (VALUE*)newNODE(scope,args); }
                 case PRIM_LIST: prim_spec(list);
                 case PRIM_QUOTE: prim_spec(quote);
                 case PRIM_ADDR: prim_func(addr);
@@ -163,8 +170,11 @@ VALUE* evaluate(VALUE *val, NODE *scope) {
             decRef(func);
             return res;
         }
-        case ID_SYMBOL:
-            return scope_resolve(((SYMBOL*)val),scope);
+        case ID_SYMBOL: {
+            VALUE *v = scope_resolve(((SYMBOL*)val),scope);
+            decRef(val);
+            return v;
+        }
         default:
             incRef(val);
             return val;

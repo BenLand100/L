@@ -74,6 +74,10 @@
 
 #define NIL NULL
 
+#define DATA_NODE       0x00
+#define DATA_FUNCTION   0x01
+#define DATA_SCOPE      0x02
+
 typedef unsigned char T_TYPE;
 typedef unsigned int T_SYMBOL;
 typedef unsigned int T_PRIMFUNC;
@@ -89,11 +93,11 @@ typedef struct {
 
 #ifdef GC_DEBUG
     #define incRef(val) if (val) { \
-        debugVal(val, "incref(%i): ",(int)((VALUE*)val)->refc); \
+        debug("incref(%i)\n",(int)((VALUE*)val)->refc); \
         ++(((VALUE*)val)->refc); \
     }
     #define decRef(val) if (val) { \
-        debugVal(val, "decref(%i): ",(int)((VALUE*)val)->refc); \
+        debug("decref(%i)\n",(int)((VALUE*)val)->refc); \
         if (--(((VALUE*)val)->refc) == 0) { \
             debugVal(val,"free: "); \
             freeVALUE((VALUE*)val); \
@@ -111,6 +115,7 @@ VALUE* deep_copy(VALUE *val);
 typedef struct {
     T_TYPE type;
     size_t refc;
+    T_TYPE datatype;
     VALUE *addr,*data;    
 } NODE;
 
@@ -123,6 +128,7 @@ static inline NODE* newNODE(void *data, void *addr) {
     NODE *node = (NODE*)malloc(sizeof(NODE));
     node->type = ID_NODE;
     node->refc = 1;
+    node->datatype = DATA_NODE;
     node->data = (VALUE*)data;
     node->addr = (VALUE*)addr;
     return node;

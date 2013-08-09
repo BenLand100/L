@@ -23,7 +23,9 @@
 
 NODE* scope_push(NODE *parent_scope) {
     incRef(parent_scope);
-    return newNODE(NIL,parent_scope);
+    NODE *scope = newNODE(NIL,parent_scope);
+    scope->datatype = DATA_SCOPE;
+    return scope;
 }
 
 NODE* scope_pop(NODE *scope) { 
