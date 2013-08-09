@@ -118,7 +118,7 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
     switch (func->type) {
         case ID_PRIMFUNC:
             switch (((PRIMFUNC*)func)->id) {
-                case PRIM_LAMBDA: { incRef(args); return (VALUE*)args; }
+                case PRIM_LAMBDA: { incRef(args); incRef(scope); return newNODE(scope,args); }
                 case PRIM_LIST: prim_spec(list);
                 case PRIM_QUOTE: prim_spec(quote);
                 case PRIM_ADDR: prim_func(addr);
@@ -133,18 +133,18 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
                 default: error("Unhandled PRIMFUNC");
             }
         case ID_NODE: {
-            NODE *vars = asNODE(((NODE*)func)->data);
+            NODE *fn_scope = scope_push(asNODE(((NODE*)func)->data));
+            NODE *vars = asNODE(asNODE(((NODE*)func)->addr)->data);
             NODE *args_eval = list(args,scope);
-            scope = scope_push(scope);
-            scope_bindMany(vars,args_eval,scope);
+            scope_bindMany(vars,args_eval,fn_scope);
             decRef(args_eval);
-            NODE *form = asNODE(((NODE*)func)->addr);
-            while (form->addr) {
-                decRef(evaluate(form->data,scope));
-                form = asNODE(form->addr);
+            NODE *body = asNODE(asNODE(((NODE*)func)->addr)->addr);
+            while (body->addr) {
+                decRef(evaluate(body->data,fn_scope));
+                body = asNODE(body->addr);
             }
-            VALUE *res = evaluate(form->data,scope);
-            scope = scope_pop(scope);
+            VALUE *res = evaluate(body->data,fn_scope);
+            scope_pop(fn_scope);
             return res;
         }
     }
