@@ -24,11 +24,12 @@
 
 // scope = (symtree . parent_scope)
 
-NODE* pushScope(NODE *parent_scope);
-NODE* popScope(NODE *scope);
+NODE* scope_push(NODE *parent_scope);
+NODE* scope_pop(NODE *scope);
 
-VALUE* resolve(SYMBOL *sym, NODE *scope);
-void bind(SYMBOL *sym, VALUE *val, NODE *scope);
-void bindMany(NODE *syms, NODE *vals, NODE *scope);
+NODE* scope_ref(SYMBOL *sym, NODE *scope);
+VALUE* scope_resolve(SYMBOL *sym, NODE *scope);
+void scope_bind(SYMBOL *sym, VALUE *val, NODE *scope);
+void scope_bindMany(NODE *syms, NODE *vals, NODE *scope);
 
 #endif

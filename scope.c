@@ -20,18 +20,18 @@
 #include "scope.h"
 #include "binmap.h"
 
-NODE* pushScope(NODE *parent_scope) {
+NODE* scope_push(NODE *parent_scope) {
     incRef(parent_scope);
     return newNODE(NIL,parent_scope);
 }
 
-NODE* popScope(NODE *scope) { 
+NODE* scope_pop(NODE *scope) { 
     NODE *parent_scope = ((NODE*)scope->addr);
     decRef(scope);
     return parent_scope;
 }
 
-NODE* resolve_ref(SYMBOL *sym, NODE *scope) {
+NODE* scope_ref(SYMBOL *sym, NODE *scope) {
     debug("Resolving: %i\n", sym->sym);
     while (scope) {
         NODE *entry = binmap_find(sym,(NODE*)scope->data);
@@ -41,18 +41,16 @@ NODE* resolve_ref(SYMBOL *sym, NODE *scope) {
     return NIL;
 }
 
-VALUE* resolve(SYMBOL *sym, NODE *scope) {
-    NODE *ref = resolve_ref(sym,scope);
-    if (ref) {
-        VALUE *val = ref->addr;
-        incRef(val);
-        decRef(ref);
-        return val;
-    }
-    error("Unbound symbol");
+VALUE* scope_resolve(SYMBOL *sym, NODE *scope) {
+    NODE *ref = scope_ref(sym,scope);
+    VALUE *val = ref->addr;
+    failNIL(ref,"Unbound symbol");
+    incRef(val);
+    decRef(ref);
+    return val;
 }
 
-void bind(SYMBOL *sym, VALUE *val, NODE *scope) {
+void scope_bind(SYMBOL *sym, VALUE *val, NODE *scope) {
     debug("Binding: %i\n", sym->sym);
     incRef(val);
     if (scope->data) {
@@ -62,9 +60,9 @@ void bind(SYMBOL *sym, VALUE *val, NODE *scope) {
     }
 }
 
-void bindMany(NODE *vars, NODE *vals, NODE *scope) {
+void scope_bindMany(NODE *vars, NODE *vals, NODE *scope) {
     while (vars && vals) {
-        bind(asSYMBOL(vars->data),vals->data,scope);
+        scope_bind(asSYMBOL(vars->data),vals->data,scope);
         vars = asNODE(vars->addr);
         vals = asNODE(vals->addr);
     }

@@ -18,6 +18,8 @@
  */
 
 #include "primitives.h"
+#include "listops.h"
+#include "scope.h"
 
 NODE* list(NODE *args, NODE *scope) {
     return args ? newNODE(evaluate(args->data,scope),list(asNODE(args->addr),scope)) : NIL;
@@ -30,12 +32,45 @@ VALUE* quote(NODE *args, NODE *scope) {
 
 VALUE* data(NODE *args, NODE *scope) {
     if (args->addr) error("DATA takes exactly 1 argument");
-    return asNODE(args->data)->data;
+    VALUE *res = asNODE(args->data)->data;
+    incRef(res);
+    return res;
 }
 
 VALUE* addr(NODE *args, NODE *scope) {
     if (args->addr) error("ADDR takes exactly 1 argument");
-    return asNODE(args->data)->addr;
+    VALUE *res = asNODE(args->data)->addr;
+    incRef(res);
+    return res;
+}
+
+VALUE* setd(NODE *args, NODE *scope) {
+    if (list_length(args) != 2) error("SETD takes exactly 2 arguments");
+    NODE *n = asNODE(args->data);
+    VALUE *v = asNODE(args->addr)->data;
+    failNIL(n,"NIL is not a NODE");
+    decRef(n->data);
+    incRef(v);
+    n->data = v;
+    return v;
+}
+
+VALUE* seta(NODE *args, NODE *scope) {
+    if (list_length(args) != 2) error("SETA takes exactly 2 arguments");
+    NODE *n = asNODE(args->data);
+    VALUE *v = asNODE(args->addr)->data;
+    failNIL(n,"NIL is not a NODE");
+    decRef(n->addr);
+    incRef(v);
+    n->addr = v;
+    return v;
+}
+
+VALUE* ref(NODE *args, NODE *scope) {
+    if (args->addr) error("REF takes exactly 1 argument");
+    NODE *ref = scope_ref(asSYMBOL(args->data),scope);
+    failNIL(ref,"Cannot reference unbound symbol");
+    return (VALUE*)ref;
 }
 
 VALUE* add(NODE *args, NODE *scope) {

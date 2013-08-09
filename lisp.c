@@ -119,6 +119,9 @@ VALUE* funcall(VALUE *func, NODE *args, NODE *scope) {
                 case PRIM_QUOTE: prim_macro(quote);
                 case PRIM_ADDR: prim_func(addr);
                 case PRIM_DATA: prim_func(data);
+                case PRIM_SETD: prim_func(setd);
+                case PRIM_SETA: prim_func(seta);
+                case PRIM_REF: prim_func(ref);
                 case PRIM_ADD: prim_func(add);
                 case PRIM_SUB: prim_func(sub);
                 case PRIM_MUL: prim_func(mul);
@@ -128,11 +131,11 @@ VALUE* funcall(VALUE *func, NODE *args, NODE *scope) {
         case ID_NODE: {
             NODE *vars = asNODE(((NODE*)func)->data);
             NODE *args_eval = list(args,scope);
-            scope = pushScope(scope);
-            bindMany(vars,args_eval,scope);
+            scope = scope_push(scope);
+            scope_bindMany(vars,args_eval,scope);
             decRef(args_eval);
             VALUE *res = evaluate(((NODE*)func)->addr,scope);
-            scope = popScope(scope);
+            scope = scope_pop(scope);
             return res;
         }
     }
@@ -152,7 +155,7 @@ VALUE* evaluate(VALUE *val, NODE *scope) {
             return res;
         }
         case ID_SYMBOL:
-            return resolve(((SYMBOL*)val),scope);
+            return scope_resolve(((SYMBOL*)val),scope);
         default:
             incRef(val);
             return val;
