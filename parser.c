@@ -105,15 +105,24 @@ T_SYMBOL intern(char *c_str) {
 }
 
 NODE* parse(char **exp) {
+    if (!sym_map) parser_init();
     debug("Parse List: %s\n",*exp);
     NODE *head = NIL;
     while (**exp) {
         switch (*((*exp)++)) {
-            case '\'':
-                list_push(newNODE(newPRIMFUNC(PRIM_QUOTE),parse(exp)),&head);
+            case '\'': {
+                debug("to quote: %s\n",*exp);
+                NODE *quoted = parse(exp);
+                debugVal(quoted->data,"quoted: ");
+                list_push(newNODE(newPRIMFUNC(PRIM_QUOTE),newNODE(quoted->data,NIL)),&head);
+                if (quoted->addr) head = list_join(list_reverse((NODE*)quoted->addr),head);
+                head = list_reverse(head);
+                debugVal(head,"expression: ");
+                return head;
+            }
             case '(':
                 list_push(parse(exp),&head);
-                continue;
+                break;
             case ')':
                 head = list_reverse(head);
                 debugVal(head,"expression: ");
@@ -122,7 +131,7 @@ NODE* parse(char **exp) {
             case '\r':
             case '\t':
             case ' ':
-                continue;
+                break;
             default: {
                 char *sym = *exp-1;
                 debug("origin: %s\n",sym);

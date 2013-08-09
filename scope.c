@@ -52,7 +52,7 @@ VALUE* scope_resolve(SYMBOL *sym, NODE *scope) {
 }
 
 void scope_bind(SYMBOL *sym, VALUE *val, NODE *scope) {
-    debug("Binding: %i\n", sym->sym);
+    debugVal(val,"Binding %s => ", sym_str(sym));
     incRef(val);
     if (scope->data) {
         binmap_put(sym,val,(NODE*)scope->data);

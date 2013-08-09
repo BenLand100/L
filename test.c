@@ -21,10 +21,12 @@
 #include "parser.h"
 #include "listops.h"
 
+// "('((x y) (+ x y)) 5 7)"
+
 int main(int argc, char **argv) {
-    NODE *forms = parseForms("(seta (ref x) 2) (+ (+ 1 x) 2)");
+    NODE *forms = parseForms("(list 'x 'y 'z) (quote (x y z)) '(x y z) ('((x y) (+ x y)) 5 7) ((lambda (x y) (+ x y)) 1 2)");
     NODE *scope = scope_push(NIL);
-    scope_bind(newSYMBOL(intern("x")),newINTEGER(4),scope);
+    //scope_bind(newSYMBOL(intern("x")),newINTEGER(4),scope);
     int len = list_length(forms);
     printf("Evaluating %i forms\n",len);
     debugVal(forms,"forms: ");

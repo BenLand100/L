@@ -110,21 +110,22 @@ void print(VALUE *val) {
     return res; \
 }
 
-#define prim_macro(name) return (VALUE*)name(args,scope)
+#define prim_spec(name) return (VALUE*)name(args,scope)
 
-VALUE* funcall(VALUE *func, NODE *args, NODE *scope) {
-    debugVal(func,"function call: ");
+VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
+    debugVal(func,"function form: ");
     failNIL(func,"NIL cannot be invoked");
     switch (func->type) {
         case ID_PRIMFUNC:
             switch (((PRIMFUNC*)func)->id) {
-                case PRIM_LIST: prim_macro(list);
-                case PRIM_QUOTE: prim_macro(quote);
+                case PRIM_LAMBDA: { incRef(args); return (VALUE*)args; }
+                case PRIM_LIST: prim_spec(list);
+                case PRIM_QUOTE: prim_spec(quote);
                 case PRIM_ADDR: prim_func(addr);
                 case PRIM_DATA: prim_func(data);
                 case PRIM_SETD: prim_func(setd);
                 case PRIM_SETA: prim_func(seta);
-                case PRIM_REF: prim_macro(ref);
+                case PRIM_REF: prim_spec(ref);
                 case PRIM_ADD: prim_func(add);
                 case PRIM_SUB: prim_func(sub);
                 case PRIM_MUL: prim_func(mul);
@@ -137,7 +138,12 @@ VALUE* funcall(VALUE *func, NODE *args, NODE *scope) {
             scope = scope_push(scope);
             scope_bindMany(vars,args_eval,scope);
             decRef(args_eval);
-            VALUE *res = evaluate(((NODE*)func)->addr,scope);
+            NODE *form = asNODE(((NODE*)func)->addr);
+            while (form->addr) {
+                decRef(evaluate(form->data,scope));
+                form = asNODE(form->addr);
+            }
+            VALUE *res = evaluate(form->data,scope);
             scope = scope_pop(scope);
             return res;
         }
@@ -152,7 +158,7 @@ VALUE* evaluate(VALUE *val, NODE *scope) {
         case ID_NODE: {
             VALUE *func = evaluate(((NODE*)val)->data,scope);
             NODE *args = asNODE(((NODE*)val)->addr);
-            VALUE *res = funcall(func,args,scope);
+            VALUE *res = call_function(func,args,scope);
             debugVal(res,"function result: ");
             decRef(func);
             return res;
@@ -164,3 +170,29 @@ VALUE* evaluate(VALUE *val, NODE *scope) {
             return val;
     }
 }
+
+//TODO macro expansion
+/*
+VALUE* call_macro(NODE *macro, NODE *
+
+NODE* macroexpand(NODE *form, NODE *scope) {
+    debugVal(form,"macroexpand: ");
+    if (!form) return NIL;
+    switch (val->type) {
+        case ID_NODE : {
+            VALUE *func = evaluate(((NODE*)val)->data,scope);
+            NODE *args = asNODE(((NODE*)val)->addr);
+            VALUE *res = call_macro(func,args,scope);
+            debugVal(res,"macro result: ");
+            decRef(func);
+            return res;
+        }
+        case ID_SYMBOL:
+            return scope_resolve(((SYMBOL*)val),scope);
+        default:
+            incRef(val);
+            return val;
+    }
+} 
+
+*/
