@@ -86,8 +86,24 @@ typedef struct {
     T_TYPE type;
     size_t refc;
 } VALUE;
-#define incRef(val) if (val) (++((VALUE*)val)->refc)
-#define decRef(val) if (val) if (--((VALUE*)val)->refc) freeVALUE((VALUE*)val);
+
+#ifdef GC_DEBUG
+    #define incRef(val) if (val) { \
+        debugVal(val, "incref(%i): ",(int)((VALUE*)val)->refc); \
+        ++(((VALUE*)val)->refc); \
+    }
+    #define decRef(val) if (val) { \
+        debugVal(val, "decref(%i): ",(int)((VALUE*)val)->refc); \
+        if (--(((VALUE*)val)->refc) == 0) { \
+            debugVal(val,"free: "); \
+            freeVALUE((VALUE*)val); \
+        } \
+    }
+#else 
+    #define incRef(val) if (val) { ++(((VALUE*)val)->refc); }
+    #define decRef(val) if (val) { if (--(((VALUE*)val)->refc) == 0) { freeVALUE((VALUE*)val); } }
+#endif
+
 #define asVALUE(val) ((VALUE*)val)
 void freeVALUE(VALUE *val);
 VALUE* deep_copy(VALUE *val);

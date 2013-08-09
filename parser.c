@@ -35,10 +35,7 @@ static NODE *literal_map = NIL;
 void parser_init() {
     debug("Defining built-in symbols\n");
     sym_map = binmap(newSYMBOL(hash("NIL")),newSTRING("NIL"));
-    debugVal(sym_map,"sym_map 1: ");
-    literal_map = newNODE(newNODE(newSYMBOL(intern("NIL")),NIL),newNODE(NIL,NIL));
-    //literal_map = binmap(newSYMBOL(intern("NIL")),NIL);
-    debugVal(sym_map,"sym_map 2: ");
+    literal_map = binmap(newSYMBOL(intern("NIL")),NIL);
     binmap_put(newSYMBOL(intern("LAMBDA")),newPRIMFUNC(PRIM_LAMBDA),literal_map);
     binmap_put(newSYMBOL(intern("QUOTE")),newPRIMFUNC(PRIM_QUOTE),literal_map);
     binmap_put(newSYMBOL(intern("LIST")),newPRIMFUNC(PRIM_LIST),literal_map);
@@ -57,7 +54,7 @@ T_SYMBOL intern(char *c_str) {
     if (!sym_map) parser_init();
     c_str = strdup(c_str);
     for (int i = 0; c_str[i]; i++) c_str[i] = toupper(c_str[i]);
-    debug("intern: %s %i\n",c_str,hash(c_str));
+    debug("intern: %s %u\n",c_str,hash(c_str));
     SYMBOL *sym = newSYMBOL(hash(c_str));
     STRING *str = newSTRING(c_str);
     NODE *entry;
@@ -166,7 +163,6 @@ NODE* parse(char **exp) {
 }
 
 NODE* parseForms(char *exp) {
-    if (!sym_map) parser_init();
     char *dup = strdup(exp);
     char *org = dup;
     NODE *forms = parse(&dup);
