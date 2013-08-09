@@ -22,12 +22,14 @@
 #include "listops.h"
 
 int main(int argc, char **argv) {
-    NODE *forms = parseForms("(+ (+ 1 1) 2)");
+    NODE *forms = parseForms("(seta (ref x) 2) (+ (+ 1 x) 2)");
+    NODE *scope = scope_push(NIL);
+    scope_bind(newSYMBOL(intern("x")),newINTEGER(4),scope);
     int len = list_length(forms);
     printf("Evaluating %i forms\n",len);
     debugVal(forms,"forms: ");
     for (NODE *form = forms; form; form = (NODE*)form->addr) {
-        VALUE *val = evaluate(form->data,NIL);
+        VALUE *val = evaluate(form->data,scope);
         printVal(val);
         decRef(val);
     }

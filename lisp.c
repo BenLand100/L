@@ -20,6 +20,7 @@
 #include "lisp.h"
 #include "scope.h"
 #include "primitives.h"
+#include "parser.h"
 #include <string.h>
 
 void freeVALUE(VALUE *val) {
@@ -91,13 +92,13 @@ void print(VALUE *val) {
             printf("%f ", ((REAL*)val)->val);
             return;
         case ID_SYMBOL:
-            printf("SYMBOL_%i ",((SYMBOL*)val)->sym);
+            printf("%s ",sym_str((SYMBOL*)val));
             return;
         case ID_STRING:
             printf("\"%s\"",((STRING*)val)->str);
             return;
         case ID_PRIMFUNC:
-            printf("PRIMFUNC_%i ",((PRIMFUNC*)val)->id);
+            printf("%s ",prim_str((PRIMFUNC*)val));
             return;
     }
 }
@@ -112,7 +113,7 @@ void print(VALUE *val) {
 #define prim_macro(name) return (VALUE*)name(args,scope)
 
 VALUE* funcall(VALUE *func, NODE *args, NODE *scope) {
-    debugVal(func,"Funcall: ");
+    debugVal(func,"function call: ");
     failNIL(func,"NIL cannot be invoked");
     switch (func->type) {
         case ID_PRIMFUNC:
@@ -123,7 +124,7 @@ VALUE* funcall(VALUE *func, NODE *args, NODE *scope) {
                 case PRIM_DATA: prim_func(data);
                 case PRIM_SETD: prim_func(setd);
                 case PRIM_SETA: prim_func(seta);
-                case PRIM_REF: prim_func(ref);
+                case PRIM_REF: prim_macro(ref);
                 case PRIM_ADD: prim_func(add);
                 case PRIM_SUB: prim_func(sub);
                 case PRIM_MUL: prim_func(mul);
@@ -145,14 +146,14 @@ VALUE* funcall(VALUE *func, NODE *args, NODE *scope) {
 }
 
 VALUE* evaluate(VALUE *val, NODE *scope) {
-    debugVal(val,"Evaluate: ");
+    debugVal(val,"evaluate: ");
     if (!val) return NIL;
     switch (val->type) {
         case ID_NODE: {
             VALUE *func = evaluate(((NODE*)val)->data,scope);
             NODE *args = asNODE(((NODE*)val)->addr);
             VALUE *res = funcall(func,args,scope);
-            debugVal(res,"Func result: ");
+            debugVal(res,"function result: ");
             decRef(func);
             return res;
         }

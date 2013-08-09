@@ -31,23 +31,48 @@ T_SYMBOL hash(char *sym) {
 
 static NODE *sym_map = NIL;
 static NODE *literal_map = NIL;
+static NODE *literal_name_map = NIL;
 
+#define addPrimFunc(sym,id) { \
+    binmap_put(newSYMBOL(intern(#sym)),newPRIMFUNC(id),literal_map); \
+    binmap_put(newPRIMFUNC(id),newSTRING(#sym),literal_name_map); \
+}
 void parser_init() {
     debug("Defining built-in symbols\n");
     sym_map = binmap(newSYMBOL(hash("NIL")),newSTRING("NIL"));
     literal_map = binmap(newSYMBOL(intern("NIL")),NIL);
-    binmap_put(newSYMBOL(intern("LAMBDA")),newPRIMFUNC(PRIM_LAMBDA),literal_map);
-    binmap_put(newSYMBOL(intern("QUOTE")),newPRIMFUNC(PRIM_QUOTE),literal_map);
-    binmap_put(newSYMBOL(intern("LIST")),newPRIMFUNC(PRIM_LIST),literal_map);
-    binmap_put(newSYMBOL(intern("ADDR")),newPRIMFUNC(PRIM_ADDR),literal_map);
-    binmap_put(newSYMBOL(intern("DATA")),newPRIMFUNC(PRIM_DATA),literal_map);
-    binmap_put(newSYMBOL(intern("SETA")),newPRIMFUNC(PRIM_SETA),literal_map);
-    binmap_put(newSYMBOL(intern("SETD")),newPRIMFUNC(PRIM_SETD),literal_map);
-    binmap_put(newSYMBOL(intern("+")),newPRIMFUNC(PRIM_ADD),literal_map);
-    binmap_put(newSYMBOL(intern("-")),newPRIMFUNC(PRIM_SUB),literal_map);
-    binmap_put(newSYMBOL(intern("*")),newPRIMFUNC(PRIM_MUL),literal_map);
-    binmap_put(newSYMBOL(intern("/")),newPRIMFUNC(PRIM_DIV),literal_map);
-    binmap_put(newSYMBOL(intern("REF")),newPRIMFUNC(PRIM_REF),literal_map);
+    literal_name_map = binmap(newPRIMFUNC(PRIM_LAMBDA),newSTRING(strdup("LAMBDA")));
+    addPrimFunc(LAMBDA,PRIM_LAMBDA);
+    addPrimFunc(QUOTE,PRIM_QUOTE);
+    addPrimFunc(LIST,PRIM_LIST);
+    addPrimFunc(ADDR,PRIM_ADDR);
+    addPrimFunc(DATA,PRIM_DATA);
+    addPrimFunc(SETA,PRIM_SETA);
+    addPrimFunc(SETD,PRIM_SETD);
+    addPrimFunc(REF,PRIM_REF);
+    addPrimFunc(+,PRIM_ADD);
+    addPrimFunc(-,PRIM_SUB);
+    addPrimFunc(*,PRIM_MUL);
+    addPrimFunc(/,PRIM_DIV);
+}
+
+
+const char* prim_str(PRIMFUNC *prim) {
+    NODE *entry = binmap_find(prim,literal_name_map);
+    if (entry) {
+        return (const char*) ((STRING*)entry->addr)->str;
+    } else {
+        return NIL;
+    }
+}
+
+const char* sym_str(SYMBOL *sym) {
+    NODE *entry = binmap_find(sym,sym_map);
+    if (entry) {
+        return (const char*) ((STRING*)entry->addr)->str;
+    } else {
+        return NIL;
+    }
 }
 
 T_SYMBOL intern(char *c_str) {
@@ -90,8 +115,9 @@ NODE* parse(char **exp) {
                 list_push(parse(exp),&head);
                 continue;
             case ')':
-                debugVal(head,"ParseList: ");
-                return list_reverse(head);
+                head = list_reverse(head);
+                debugVal(head,"expression: ");
+                return head;
             case '\n':
             case '\r':
             case '\t':
@@ -99,11 +125,11 @@ NODE* parse(char **exp) {
                 continue;
             default: {
                 char *sym = *exp-1;
-                debug("Start of literal: %s\n",sym);
+                debug("origin: %s\n",sym);
                 while (**exp && **exp != ' ' && **exp != ')') (*exp)++;
                 char old = **exp;
                 **exp = 0;
-                debug("Literal: %s\n",sym);
+                debug("literal: %s\n",sym);
                 switch (sym[0]) {
                     case '+':
                     case '-':
@@ -155,11 +181,13 @@ NODE* parse(char **exp) {
                         list_push(literal->addr,&head);
                     }
                  }
-                 debugVal(head,"ParseLiteral: ");
+                 debugVal(head,"parsed: ");
              }
         }
     }
-    return list_reverse(head);
+    head = list_reverse(head);
+    debugVal(head,"dangling: ");
+    return head;
 }
 
 NODE* parseForms(char *exp) {

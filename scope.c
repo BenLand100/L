@@ -19,6 +19,7 @@
 
 #include "scope.h"
 #include "binmap.h"
+#include "parser.h"
 
 NODE* scope_push(NODE *parent_scope) {
     incRef(parent_scope);
@@ -32,7 +33,7 @@ NODE* scope_pop(NODE *scope) {
 }
 
 NODE* scope_ref(SYMBOL *sym, NODE *scope) {
-    debug("Resolving: %i\n", sym->sym);
+    debug("resolving: %s\n", sym_str(sym));
     while (scope) {
         NODE *entry = binmap_find(sym,(NODE*)scope->data);
         if (entry) return entry;
@@ -43,8 +44,8 @@ NODE* scope_ref(SYMBOL *sym, NODE *scope) {
 
 VALUE* scope_resolve(SYMBOL *sym, NODE *scope) {
     NODE *ref = scope_ref(sym,scope);
+    failNIL(ref,"Unbound symbol: %s", sym_str(sym));
     VALUE *val = ref->addr;
-    failNIL(ref,"Unbound symbol");
     incRef(val);
     decRef(ref);
     return val;

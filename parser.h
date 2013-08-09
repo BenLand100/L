@@ -23,6 +23,8 @@
 #include "lisp.h"
 
 T_SYMBOL intern(char *sym);
+const char* prim_str(PRIMFUNC *prim);
+const char* sym_str(SYMBOL *sym);
 NODE* parseForms(char *exp);
 
 #endif

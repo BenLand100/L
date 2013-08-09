@@ -30,7 +30,7 @@
 
 #define error(...) { printf("ERROR: "); printf(__VA_ARGS__); printf("\n"); exit(0); }
 #define debug(...) { printf(__VA_ARGS__); }
-#define failNIL(val,fail) if (!(val)) error(fail);
+#define failNIL(val,...) if (!(val)) error(__VA_ARGS__);
 
 #define printVal(val) {print((VALUE*)val); printf("\n");}
 #define debugVal(val,...) { printf(__VA_ARGS__); printVal(val); }

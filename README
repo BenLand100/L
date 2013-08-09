@@ -1,4 +1,4 @@
-L is a toy project to implement a lisp-lisp language in C. The objective here
+L is a toy project to implement a lisp-like language in C. The objective here
 is to end up with a language with simple evaluation rules (lisp.c/lisp.h) and
 simple primitive operations (primitives.c/primitives.h) where the code and data
 are made of dual pointers (NODE) often referred to as "cons cells" in other 
