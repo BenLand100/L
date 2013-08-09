@@ -50,6 +50,6 @@ VALUE* ref(NODE *args, NODE *scope);
 VALUE* add(NODE *args, NODE *scope);
 VALUE* mul(NODE *args, NODE *scope);
 VALUE* sub(NODE *args, NODE *scope);
-VALUE* div(NODE *args, NODE *scope);
+VALUE* div_(NODE *args, NODE *scope);
 
 #endif 

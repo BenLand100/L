@@ -35,6 +35,7 @@ NODE* binmap(void *key, void *val) {
 }
 
 NODE* binmap_find(void *key, NODE *_binmap) {
+    //debugVal(_binmap,"find: ");
     if (!_binmap) return NIL;
     int cmp = cmpVALUE(asVALUE(key),binmap_key(_binmap));
     if (!cmp) {
@@ -49,7 +50,7 @@ NODE* binmap_find(void *key, NODE *_binmap) {
 }
 
 void binmap_put(void *key, void *val, NODE *_binmap) {
-    failNIL(binmap,"BINMAP is NIL");
+    failNIL(_binmap,"BINMAP is NIL");
     int cmp = cmpVALUE(asVALUE(key),binmap_key(_binmap));
     if (!cmp) {
         decRef(binmap_val(_binmap));

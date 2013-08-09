@@ -20,6 +20,7 @@
 #include "lisp.h"
 #include "scope.h"
 #include "primitives.h"
+#include <string.h>
 
 void freeVALUE(VALUE *val) {
     switch (val->type) {
@@ -50,6 +51,7 @@ VALUE* deep_copy(VALUE *val) {
         case ID_PRIMFUNC:
             return (VALUE*)newPRIMFUNC(((PRIMFUNC*)val)->id);
     }
+    error("Cannot copy a non-value");
 }
 
 void printList(NODE *list) {
@@ -125,7 +127,7 @@ VALUE* funcall(VALUE *func, NODE *args, NODE *scope) {
                 case PRIM_ADD: prim_func(add);
                 case PRIM_SUB: prim_func(sub);
                 case PRIM_MUL: prim_func(mul);
-                case PRIM_DIV: prim_func(div);
+                case PRIM_DIV: prim_func(div_);
                 default: error("Unhandled PRIMFUNC");
             }
         case ID_NODE: {

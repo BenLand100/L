@@ -159,7 +159,7 @@ VALUE* sub(NODE *args, NODE *scope) {
     return real ? asVALUE(newREAL(accum_r)) : asVALUE(newINTEGER(accum_i));
 }
 
-VALUE* div(NODE *args, NODE *scope) {
+VALUE* div_(NODE *args, NODE *scope) {
     debugVal(args,"div: ");
     bool real = false;
     T_REAL accum_r;

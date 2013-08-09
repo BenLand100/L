@@ -20,38 +20,38 @@
 #ifndef _LISP
 #define _LISP
 
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#define error(msg,...) { printf("ERROR: "); printf(msg, ##__VA_ARGS__); printf("\n"); exit(0); }
-#define debug(msg,...) { printf(msg, ##__VA_ARGS__); }
+#define bool    int
+#define true    1
+#define false   0
+
+#define error(...) { printf("ERROR: "); printf(__VA_ARGS__); printf("\n"); exit(0); }
+#define debug(...) { printf(__VA_ARGS__); }
 #define failNIL(val,fail) if (!(val)) error(fail);
 
 #define printVal(val) {print((VALUE*)val); printf("\n");}
-#define debugVal(val,lbl,...) { printf(lbl, ##__VA_ARGS__); printVal(val); }
+#define debugVal(val,...) { printf(__VA_ARGS__); printVal(val); }
 
 #define as_type(_type) \
-    inline _type* as ## _type(void *val) { \
+    static inline _type* as ## _type(void *val) { \
         if (!val || ((VALUE*)val)->type != ID_ ## _type) error(#_type" expected"); \
         return (_type*)val; \
     }
     
 #define new_type(_type,_var) \
-    inline _type* new ## _type() { \
+    static inline _type* new ## _type(T_ ## _type _ ## _var) { \
         _type *val = (_type*)malloc(sizeof(_type));\
         val->type = ID_ ## _type; \
         val->refc = 1; \
-        return val; \
-    } \
-    inline _type* new ## _type(T_ ## _type _ ## _var) { \
-        _type *val = new ## _type(); \
         val->_var = _ ## _var; \
         return val; \
     } 
 
 #define test_cmp(_type,_var,_cmp_cond) \
-    inline int cmp ## _type(_type *a, _type *b) { \
+    static inline int cmp ## _type(_type *a, _type *b) { \
         return (_cmp_cond); \
     }    
 
@@ -98,36 +98,31 @@ typedef struct {
     VALUE *addr,*data;    
 } NODE;
 
-inline NODE* asNODE(void *val) { 
+static inline NODE* asNODE(void *val) { 
     if (val && ((VALUE*)val)->type != ID_NODE) error("NODE expected");
     return (NODE*)val;
 }
 
-inline NODE* newNODE() {
+static inline NODE* newNODE(void *data, void *addr) {
     NODE *node = (NODE*)malloc(sizeof(NODE));
     node->type = ID_NODE;
     node->refc = 1;
-    return node;
-}
-
-inline NODE* newNODE(void *data, void *addr) {
-    NODE *node = newNODE();
     node->data = (VALUE*)data;
     node->addr = (VALUE*)addr;
     return node;
 }
 
-inline int cmpNODE(NODE *a, NODE *b) {
-    return ((size_t)a->data + (size_t)b->addr) - ((size_t)b->data + (size_t)b->addr);
+static inline int cmpNODE(NODE *a, NODE *b) {
+    return (size_t)a - (size_t)b;
 }
 
-def_type(SYMBOL,sym,(int)a->sym - (int)b->sym);
-def_type(INTEGER,val,a->val - b->val);
-def_type(REAL,val,a->val - b->val);
-def_type(PRIMFUNC,id,(int)a->id - (int)b->id);
-def_type(STRING,str,strcmp(a->str,b->str));
+def_type(SYMBOL,sym,(int)a->sym - (int)b->sym)
+def_type(INTEGER,val,a->val - b->val)
+def_type(REAL,val,a->val - b->val)
+def_type(PRIMFUNC,id,(int)a->id - (int)b->id)
+def_type(STRING,str,strcmp(a->str,b->str))
 
-inline int cmpVALUE(void *_a, void *_b) {
+static inline int cmpVALUE(void *_a, void *_b) {
     VALUE *a = asVALUE(_a);
     VALUE *b = asVALUE(_b);
     if (a && b && a->type == b->type) {
@@ -146,7 +141,7 @@ inline int cmpVALUE(void *_a, void *_b) {
                 return cmpPRIMFUNC((PRIMFUNC*)a,(PRIMFUNC*)b);
         }
     }
-    return false;
+    error("Cannot compare dissimilar types\n");
 }
 
 VALUE* evaluate(VALUE *val, NODE *scope);

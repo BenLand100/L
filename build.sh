@@ -1,3 +1,3 @@
 #!/bin/bash
 
-g++ *.c -ggdb -o lisp
+gcc -std=gnu99 -pedantic -Wall *.c -ggdb -o lisp
