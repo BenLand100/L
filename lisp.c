@@ -145,15 +145,14 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
         case ID_NODE: {
             NODE *fn_scope = scope_push(asNODE(((NODE*)func)->data));
             NODE *fn_vars = asNODE(asNODE(((NODE*)func)->addr)->data);
-            NODE *fn_args = NIL;
             if (!fn_vars->addr && fn_vars->data->type == ID_NODE) {
-                fn_vars = asNODE(fn_vars->data); //macro
-                fn_args = args; 
+                fn_vars = asNODE(fn_vars->data); 
+                scope_bindMany(fn_vars,args,fn_scope); //quote args
             } else {
-                fn_args = list(args,scope); //function
+                NODE *fn_args = list(args,scope); //eval args
+                scope_bindMany(fn_vars,fn_args,fn_scope);
+                decRef(fn_args);
             }
-            scope_bindMany(fn_vars,fn_args,fn_scope);
-            decRef(fn_args);
             NODE *fn_body = asNODE(asNODE(((NODE*)func)->addr)->addr);
             while (fn_body->addr) {
                 decRef(evaluate(fn_body->data,fn_scope));
@@ -244,8 +243,7 @@ VALUE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
                 if (macro) {
                     debugVal(form,"expanding: ");
                     VALUE *replace = call_function(macro->addr,args,scope);
-                    incRef(args); //is this right?
-                    decRef(form);
+                    decRef(form); 
                     return replace; //return replaced form
                 } else {
                     return (VALUE*)form; //return expanded form
