@@ -39,6 +39,7 @@
 
 #define PRIMS_SYMBOL PRIMS_NUMBER+4
 #define PRIM_REF     PRIMS_SYMBOL+0
+#define PRIM_BIND     PRIMS_SYMBOL+1
 
 NODE* list(NODE *args, NODE *scope);
 VALUE* quote(NODE *args, NODE *scope);
@@ -47,6 +48,7 @@ VALUE* addr(NODE *args, NODE *scope);
 VALUE* setd(NODE *args, NODE *scope);
 VALUE* seta(NODE *args, NODE *scope);
 VALUE* ref(NODE *args, NODE *scope);
+VALUE* bind(NODE *args, NODE *scope);
 VALUE* add(NODE *args, NODE *scope);
 VALUE* mul(NODE *args, NODE *scope);
 VALUE* sub(NODE *args, NODE *scope);

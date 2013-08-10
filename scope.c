@@ -37,6 +37,7 @@ NODE* scope_pop(NODE *scope) {
 NODE* scope_ref(SYMBOL *sym, NODE *scope) {
     debug("resolving: %s\n", sym_str(sym));
     while (scope) {
+        debugVal(scope,"scope: ");
         NODE *entry = binmap_find(sym,(NODE*)scope->data);
         if (entry) return entry;
         scope = (NODE*)scope->addr;
@@ -56,6 +57,7 @@ VALUE* scope_resolve(SYMBOL *sym, NODE *scope) {
 void scope_bind(SYMBOL *sym, VALUE *val, NODE *scope) {
     debugVal(val,"Binding %s => ", sym_str(sym));
     incRef(val);
+    incRef(sym);
     if (scope->data) {
         binmap_put(sym,val,(NODE*)scope->data);
     } else {

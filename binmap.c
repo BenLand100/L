@@ -53,6 +53,7 @@ void binmap_put(void *key, void *val, NODE *_binmap) {
     failNIL(_binmap,"BINMAP is NIL");
     int cmp = cmpVALUE(asVALUE(key),binmap_key(_binmap));
     if (!cmp) {
+        decRef((VALUE*)key);
         decRef(binmap_val(_binmap));
         binmap_val(_binmap) = asVALUE(val);
     } else if (cmp > 0) {

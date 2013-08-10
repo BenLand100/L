@@ -75,6 +75,14 @@ VALUE* ref(NODE *args, NODE *scope) {
     return (VALUE*)ref;
 }
 
+VALUE* bind(NODE *args, NODE *scope) {
+    if (list_length(args) != 2) error("BIND takes exactly 2 arguments");
+    scope_bind(asSYMBOL(args->data),asNODE(args->addr)->data,scope);
+    incRef(asNODE(args->addr)->data);
+    return asNODE(args->addr)->data;
+}
+
+
 VALUE* add(NODE *args, NODE *scope) {
     debugVal(args,"add: ");
     bool real = false;

@@ -50,6 +50,7 @@ void parser_init() {
     addPrimFunc(SETA,PRIM_SETA);
     addPrimFunc(SETD,PRIM_SETD);
     addPrimFunc(REF,PRIM_REF);
+    addPrimFunc(BIND,PRIM_BIND);
     addPrimFunc(+,PRIM_ADD);
     addPrimFunc(-,PRIM_SUB);
     addPrimFunc(*,PRIM_MUL);

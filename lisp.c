@@ -132,7 +132,8 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
                 case PRIM_DATA: prim_func(data);
                 case PRIM_SETD: prim_func(setd);
                 case PRIM_SETA: prim_func(seta);
-                case PRIM_REF: prim_spec(ref);
+                case PRIM_REF: prim_func(ref);
+                case PRIM_BIND: prim_func(bind);
                 case PRIM_ADD: prim_func(add);
                 case PRIM_SUB: prim_func(sub);
                 case PRIM_MUL: prim_func(mul);
@@ -179,29 +180,35 @@ VALUE* evaluate(VALUE *val, NODE *scope) {
             return val;
     }
 }
-
-//TODO macro expansion
 /*
-VALUE* call_macro(NODE *macro, NODE *
-
-NODE* macroexpand(NODE *form, NODE *scope) {
+NODE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
     debugVal(form,"macroexpand: ");
     if (!form) return NIL;
-    switch (val->type) {
-        case ID_NODE : {
-            VALUE *func = evaluate(((NODE*)val)->data,scope);
-            NODE *args = asNODE(((NODE*)val)->addr);
-            VALUE *res = call_macro(func,args,scope);
-            debugVal(res,"macro result: ");
-            decRef(func);
-            return res;
+    if (form->data) {
+        switch (form->data->type) {
+            case ID_PRIMFUNC: //handle special form syntax
+                switch (((PRIMFUNC*)form->data)->id) {
+                    case ID_QUOTE:
+                        return form;
+                    case ID_LAMBDA:
+                        //TODO macroexpand the body
+                        return form; //return modified form
+                }
+                //macro expand arguments to the primfunc
+                return form; //return modified form
+            case ID_SYMBOL: //handle argument expansion and macro replacement
+                //macro expand arguments to the func
+                NODE *macro = binmap_find(form->data,macros);
+                if (macro) {
+                    //invoke macro as resolved function, quoting args, form is result
+                    return form; //return modified form
+                } else {
+                    return form; //return modified form
+                }
+            case ID_NODE: //handle dynamic function
+                macroexpand
+            default:
+                error("Invalid syntax");
         }
-        case ID_SYMBOL:
-            return scope_resolve(((SYMBOL*)val),scope);
-        default:
-            incRef(val);
-            return val;
     }
-} 
-
-*/
+}*/

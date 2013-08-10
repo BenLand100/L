@@ -91,16 +91,20 @@ typedef struct {
     size_t refc;
 } VALUE;
 
+
 #ifdef GC_DEBUG
     #define incRef(val) if (val) { \
-        debug("incref(%p):%u\n",(void*)val,((VALUE*)val)->refc); \
+        if (val->type == -1) error("NOT REAL DATA"); \
+        /*debug("incref(%p):%u\n",(void*)val,((VALUE*)val)->refc);*/ \
         ++(((VALUE*)val)->refc); \
     }
     #define decRef(val) if (val) { \
-        debug("decref(%p):%u\n",(void*)val,(int)((VALUE*)val)->refc); \
+        if (val->type == -1) error("DOUBLE FREE"); \
+        /*debug("decref(%p):%u\n",(void*)val,(int)((VALUE*)val)->refc);*/ \
         if (--(((VALUE*)val)->refc) == 0) { \
             debugVal(val,"free: "); \
-            freeVALUE((VALUE*)val); \
+            val->type = -1; \
+            /*freeVALUE((VALUE*)val);*/ \
         } \
     }
 #else 
@@ -163,7 +167,9 @@ static inline int cmpVALUE(void *_a, void *_b) {
                 return cmpPRIMFUNC((PRIMFUNC*)a,(PRIMFUNC*)b);
         }
     }
-    error("Cannot compare dissimilar types\n");
+    if (a && b) 
+        error("Cannot compare dissimilar types %u %u\n",a->type,b->type);
+    error("Cannot compare NIL");
 }
 
 VALUE* evaluate(VALUE *val, NODE *scope);
