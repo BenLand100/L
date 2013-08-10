@@ -91,19 +91,18 @@ typedef struct {
     size_t refc;
 } VALUE;
 
-
 #ifdef GC_DEBUG
     #define incRef(val) if (val) { \
-        if (val->type == -1) error("NOT REAL DATA"); \
+        if ((val)->type == -1) error("NOT REAL DATA"); \
         /*debug("incref(%p):%u\n",(void*)val,((VALUE*)val)->refc);*/ \
         ++(((VALUE*)val)->refc); \
     }
     #define decRef(val) if (val) { \
-        if (val->type == -1) error("DOUBLE FREE"); \
+        if ((val)->type == -1) error("DOUBLE FREE"); \
         /*debug("decref(%p):%u\n",(void*)val,(int)((VALUE*)val)->refc);*/ \
         if (--(((VALUE*)val)->refc) == 0) { \
             debugVal(val,"free: "); \
-            val->type = -1; \
+            (val)->type = -1; \
             /*freeVALUE((VALUE*)val);*/ \
         } \
     }
@@ -172,6 +171,7 @@ static inline int cmpVALUE(void *_a, void *_b) {
     error("Cannot compare NIL");
 }
 
+VALUE* macroexpand(NODE *form, NODE *scope, NODE *macros);
 VALUE* evaluate(VALUE *val, NODE *scope);
 void print(VALUE *val);
 

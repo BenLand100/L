@@ -25,7 +25,12 @@
 // "('((x y) (+ x y)) 5 7)"
 
 int main(int argc, char **argv) {
-    NODE *forms = parseForms("(bind 'f 42) (list f)");
+    NODE *forms = parseForms("(macro set (symbol value) (list 'seta (list 'ref (list 'quote symbol)) value)) (bind 'x NIL) (set x (+ 1 1))");
+    NODE *macros = binmap(newSYMBOL(intern("NIL")),NIL);
+    NODE *macro_scope = scope_push(NIL);
+    debugVal(forms,"before macroexpand: ");
+    forms = macroexpand(forms,macro_scope,macros);
+    debugVal(forms,"after macroexpand: ");
     NODE *scope = scope_push(NIL);
     int len = list_length(forms);
     printf("Evaluating %i forms\n",len);

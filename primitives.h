@@ -22,16 +22,19 @@
 
 #include "lisp.h"
 
-#define PRIMS_LIST   0x00
-#define PRIM_LAMBDA  PRIMS_LIST+0
-#define PRIM_LIST    PRIMS_LIST+1
-#define PRIM_QUOTE   PRIMS_LIST+2
-#define PRIM_DATA    PRIMS_LIST+3
-#define PRIM_ADDR    PRIMS_LIST+4
-#define PRIM_SETA    PRIMS_LIST+5
-#define PRIM_SETD    PRIMS_LIST+6
+#define PRIMS_INVOKE 0
+#define PRIM_LAMBDA  PRIMS_INVOKE+0
+#define PRIM_MACRO   PRIMS_INVOKE+1
 
-#define PRIMS_NUMBER PRIMS_LIST+7
+#define PRIMS_LIST   PRIMS_INVOKE+2
+#define PRIM_LIST    PRIMS_LIST+0
+#define PRIM_QUOTE   PRIMS_LIST+1
+#define PRIM_DATA    PRIMS_LIST+2
+#define PRIM_ADDR    PRIMS_LIST+3
+#define PRIM_SETA    PRIMS_LIST+4
+#define PRIM_SETD    PRIMS_LIST+5
+
+#define PRIMS_NUMBER PRIMS_LIST+6
 #define PRIM_ADD     PRIMS_NUMBER+0
 #define PRIM_SUB     PRIMS_NUMBER+1
 #define PRIM_MUL     PRIMS_NUMBER+2
@@ -39,7 +42,7 @@
 
 #define PRIMS_SYMBOL PRIMS_NUMBER+4
 #define PRIM_REF     PRIMS_SYMBOL+0
-#define PRIM_BIND     PRIMS_SYMBOL+1
+#define PRIM_BIND    PRIMS_SYMBOL+1
 
 NODE* list(NODE *args, NODE *scope);
 VALUE* quote(NODE *args, NODE *scope);

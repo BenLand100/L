@@ -43,6 +43,7 @@ void parser_init() {
     literal_map = binmap(newSYMBOL(intern("NIL")),NIL);
     literal_name_map = binmap(newPRIMFUNC(PRIM_LAMBDA),newSTRING(strdup("LAMBDA")));
     addPrimFunc(LAMBDA,PRIM_LAMBDA);
+    addPrimFunc(MACRO,PRIM_MACRO);
     addPrimFunc(QUOTE,PRIM_QUOTE);
     addPrimFunc(LIST,PRIM_LIST);
     addPrimFunc(ADDR,PRIM_ADDR);

@@ -21,6 +21,8 @@
 #include "scope.h"
 #include "primitives.h"
 #include "parser.h"
+#include "binmap.h"
+#include "listops.h"
 #include <string.h>
 
 void freeVALUE(VALUE *val) {
@@ -125,7 +127,7 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
     switch (func->type) {
         case ID_PRIMFUNC:
             switch (((PRIMFUNC*)func)->id) {
-                case PRIM_LAMBDA: { incRef(args); incRef(scope); return (VALUE*)newNODE(scope,args); }
+                case PRIM_LAMBDA: { incRef(args); incRef(scope); NODE *f = newNODE(scope,args); f->datatype = DATA_FUNCTION; return (VALUE*)f; }
                 case PRIM_LIST: prim_spec(list);
                 case PRIM_QUOTE: prim_spec(quote);
                 case PRIM_ADDR: prim_func(addr);
@@ -142,16 +144,22 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
             }
         case ID_NODE: {
             NODE *fn_scope = scope_push(asNODE(((NODE*)func)->data));
-            NODE *vars = asNODE(asNODE(((NODE*)func)->addr)->data);
-            NODE *args_eval = list(args,scope);
-            scope_bindMany(vars,args_eval,fn_scope);
-            decRef(args_eval);
-            NODE *body = asNODE(asNODE(((NODE*)func)->addr)->addr);
-            while (body->addr) {
-                decRef(evaluate(body->data,fn_scope));
-                body = asNODE(body->addr);
+            NODE *fn_vars = asNODE(asNODE(((NODE*)func)->addr)->data);
+            NODE *fn_args = NIL;
+            if (!fn_vars->addr && fn_vars->data->type == ID_NODE) {
+                fn_vars = asNODE(fn_vars->data); //macro
+                fn_args = args; 
+            } else {
+                fn_args = list(args,scope); //function
             }
-            VALUE *res = evaluate(body->data,fn_scope);
+            scope_bindMany(fn_vars,fn_args,fn_scope);
+            decRef(fn_args);
+            NODE *fn_body = asNODE(asNODE(((NODE*)func)->addr)->addr);
+            while (fn_body->addr) {
+                decRef(evaluate(fn_body->data,fn_scope));
+                fn_body = asNODE(fn_body->addr);
+            }
+            VALUE *res = evaluate(fn_body->data,fn_scope);
             scope_pop(fn_scope);
             return res;
         }
@@ -180,35 +188,78 @@ VALUE* evaluate(VALUE *val, NODE *scope) {
             return val;
     }
 }
-/*
-NODE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
+
+#define expandlist(list) \
+    for (NODE *expander = list; expander; expander = asNODE(expander->addr)) { \
+        if (expander->data && expander->data->type == ID_NODE) { \
+            expander->data = macroexpand((NODE*)expander->data,scope,macros); \
+        } \
+    }
+    
+
+VALUE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
     debugVal(form,"macroexpand: ");
     if (!form) return NIL;
     if (form->data) {
         switch (form->data->type) {
-            case ID_PRIMFUNC: //handle special form syntax
+            case ID_PRIMFUNC: { //handle special form syntax
                 switch (((PRIMFUNC*)form->data)->id) {
-                    case ID_QUOTE:
-                        return form;
-                    case ID_LAMBDA:
-                        //TODO macroexpand the body
-                        return form; //return modified form
+                    case PRIM_QUOTE:
+                        return (VALUE*)form; //return unmodified form
+                    case PRIM_LAMBDA: {
+                        NODE *body = asNODE(asNODE(form->addr)->addr);
+                        expandlist(body);
+                        return (VALUE*)form; //return expanded form
+                    }
+                    case PRIM_MACRO: { 
+                        if (list_length(form) < 3) error("MACRO takes at least three arguments");
+                        SYMBOL *name = asSYMBOL(asNODE(form->addr)->data);
+                        debugVal(name,"new macro: ")
+                        incRef(name);
+                        NODE *args = asNODE(asNODE(form->addr)->addr);
+                        args->data = newNODE(args->data,NIL);
+                        incRef(args);
+                        decRef(form);
+                        NODE *body = asNODE(args->addr);
+                        expandlist(body);
+                        incRef(scope); 
+                        NODE *macro = newNODE(scope,args); 
+                        debugVal(macro,"macro func: ");
+                        macro->datatype = DATA_FUNCTION; 
+                        binmap_put(name,macro,macros);
+                        return NIL; //emits no runtime code
+                    }
                 }
-                //macro expand arguments to the primfunc
-                return form; //return modified form
-            case ID_SYMBOL: //handle argument expansion and macro replacement
-                //macro expand arguments to the func
+                NODE *args = asNODE(form->addr);
+                expandlist(args);
+                return (VALUE*)form; //return expanded form
+            }
+            case ID_SYMBOL: { //handle an invokable form w/ symbol
+                debug("detected possible macro\n");
+                NODE *args = asNODE(form->addr);
+                debugVal(args,"macro arguments: ");
+                expandlist(args);
+                debugVal(args,"expanded macro arguments: ");
                 NODE *macro = binmap_find(form->data,macros);
                 if (macro) {
-                    //invoke macro as resolved function, quoting args, form is result
-                    return form; //return modified form
+                    debugVal(form,"expanding: ");
+                    VALUE *replace = call_function(macro->addr,args,scope);
+                    incRef(args); //is this right?
+                    decRef(form);
+                    return replace; //return replaced form
                 } else {
-                    return form; //return modified form
+                    return (VALUE*)form; //return expanded form
                 }
-            case ID_NODE: //handle dynamic function
-                macroexpand
+            }
+            case ID_NODE: { //handle dynamic function
+                VALUE *head = macroexpand((NODE*)form->data,scope,macros);
+                form->data = head;
+                NODE *args = asNODE(form->addr);
+                expandlist(args);
+                return (VALUE*)form;
+            }
             default:
-                error("Invalid syntax");
+                error("Invalid syntax detected by MACROEXPAND");
         }
     }
-}*/
+}
