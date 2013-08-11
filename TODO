@@ -1,7 +1,9 @@
 ---dev priorities---
+implement COND and special looping forms
 implement backtick convention for use in macros
-implement &rest arguments (keyword eventually?) 
 start writing base language macros / functions in lang.l
+implement some print function
+string parsing
 
 ---known bugs---
 

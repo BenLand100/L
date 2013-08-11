@@ -30,6 +30,6 @@ NODE* scope_pop(NODE *scope);
 NODE* scope_ref(SYMBOL *sym, NODE *scope);
 VALUE* scope_resolve(SYMBOL *sym, NODE *scope);
 void scope_bind(SYMBOL *sym, VALUE *val, NODE *scope);
-void scope_bindMany(NODE *syms, NODE *vals, NODE *scope);
+void scope_bindArgs(NODE *syms, NODE *vals, NODE *scope);
 
 #endif

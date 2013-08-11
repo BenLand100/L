@@ -131,6 +131,7 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
                 case PRIM_PROG: prim_spec(prog);
                 case PRIM_LIST: prim_spec(list);
                 case PRIM_QUOTE: prim_spec(quote);
+                case PRIM_NODE: prim_func(node);
                 case PRIM_ADDR: prim_func(addr);
                 case PRIM_DATA: prim_func(data);
                 case PRIM_SETD: prim_func(setd);
@@ -148,10 +149,10 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
             NODE *fn_vars = asNODE(asNODE(((NODE*)func)->addr)->data);
             if (!fn_vars->addr && fn_vars->data->type == ID_NODE) {
                 fn_vars = asNODE(fn_vars->data); 
-                scope_bindMany(fn_vars,args,fn_scope); //quote args
+                scope_bindArgs(fn_vars,args,fn_scope); //quote args
             } else {
                 NODE *fn_args = list(args,scope); //eval args
-                scope_bindMany(fn_vars,fn_args,fn_scope);
+                scope_bindArgs(fn_vars,fn_args,fn_scope);
                 decRef(fn_args);
             }
             NODE *fn_body = asNODE(asNODE(((NODE*)func)->addr)->addr);

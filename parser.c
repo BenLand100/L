@@ -46,6 +46,7 @@ void parser_init() {
     addPrimFunc(PROG,PRIM_PROG);
     addPrimFunc(MACRO,PRIM_MACRO);
     addPrimFunc(QUOTE,PRIM_QUOTE);
+    addPrimFunc(NODE,PRIM_NODE);
     addPrimFunc(LIST,PRIM_LIST);
     addPrimFunc(ADDR,PRIM_ADDR);
     addPrimFunc(DATA,PRIM_DATA);
@@ -142,7 +143,7 @@ NODE* parse(char **exp) {
             default: {
                 char *sym = *exp-1;
                 debug("origin: %s\n",sym);
-                while (**exp && **exp != ' ' && **exp != ')') (*exp)++;
+                while (**exp && **exp != ' ' && **exp != ')' && **exp != '\n' && **exp != '\r' && **exp != '\t') (*exp)++;
                 char old = **exp;
                 **exp = 0;
                 debug("literal: %s\n",sym);

@@ -47,6 +47,14 @@ VALUE* quote(NODE *args, NODE *scope) {
     return deep_copy(args->data);
 }
 
+
+VALUE* node(NODE *args, NODE *scope) {
+    if (list_length(args) != 2) error("SETD takes exactly 2 arguments");
+    incRef(args->data);
+    incRef(((NODE*)args->addr)->data);
+    return newNODE(args->data,((NODE*)args->addr)->data);
+}
+
 VALUE* data(NODE *args, NODE *scope) {
     if (args->addr) error("DATA takes exactly 1 argument");
     VALUE *res = asNODE(args->data)->data;

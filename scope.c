@@ -65,10 +65,27 @@ void scope_bind(SYMBOL *sym, VALUE *val, NODE *scope) {
     }
 }
 
-void scope_bindMany(NODE *vars, NODE *vals, NODE *scope) {
+static bool scope_init_syms_flag = false;
+static T_SYMBOL sym_rest;
+void scope_init_syms() {
+    scope_init_syms_flag = true;
+    sym_rest = intern("&REST");
+}
+
+void scope_bindArgs(NODE *vars, NODE *vals, NODE *scope) {        
+    if (!scope_init_syms_flag) scope_init_syms();
     while (vars && vals) {
-        scope_bind(asSYMBOL(vars->data),vals->data,scope);
-        vars = asNODE(vars->addr);
-        vals = asNODE(vals->addr);
+        T_SYMBOL sym = asSYMBOL(vars->data)->sym;
+        if (sym == sym_rest) {
+            vars = asNODE(vars->addr);
+            incRef(vals);
+            scope_bind(asSYMBOL(vars->data),(VALUE*)vals,scope);
+            vars = vals = NIL;
+        } else {
+            scope_bind((SYMBOL*)vars->data,vals->data,scope);
+            vars = asNODE(vars->addr);
+            vals = asNODE(vals->addr);
+        }
     }
+    if (vars || vals) error("Mismatched number of arguments and variables");
 }
