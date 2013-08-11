@@ -23,19 +23,33 @@
 #include "listops.h"
 #include "binmap.h"
 
-// "('((x y) (+ x y)) 5 7)"
-// "(macro set (symbol value) (list 'seta (list 'ref (list 'quote symbol)) value)) (bind 'x NIL) (set x (+ 1 1))"
+VALUE* eval_string(char *prog_str, NODE *static_scope, NODE *macro_map) {
+    NODE *prog = parseForms(prog_str);
+    debugVal(prog,"before macroexpand: ");
+    prog = (NODE*)macroexpand(prog,static_scope,macro_map);
+    debugVal(prog,"after macroexpand: ");
+    VALUE *val = evaluate((VALUE*)prog,static_scope);
+    decRef(prog);
+    return val;
+} 
 
 int main(int argc, char **argv) {
-    NODE *prog = parseForms("(+ 1 1)");
-    NODE *macros = binmap(newSYMBOL(intern("NIL")),NIL);
-    NODE *macro_scope = scope_push(NIL);
-    debugVal(prog,"before macroexpand: ");
-    prog = (NODE*)macroexpand(prog,macro_scope,macros);
-    debugVal(prog,"after macroexpand: ");
-    NODE *scope = scope_push(NIL);
-    VALUE *val = evaluate((VALUE*)prog,scope);
-    printVal(val,"result: ");
-    decRef(val);
-    decRef(prog);
+    NODE *static_scope = scope_push(NIL);
+    NODE *macro_map = binmap(newSYMBOL(intern("NIL")),NIL);
+    for (int i = 1; i < argc; i++) {
+        debug("loading file: %s\n",argv[i]);
+        FILE *f = fopen(argv[i],"rb");
+        if (!f) error("Could not open file %s",argv[i]);
+        fseek(f, 0, SEEK_END);
+        size_t len = ftell(f);
+        rewind(f);
+        char *prog_str = malloc(len+1);
+        fread(prog_str,1,len,f);
+        prog_str[len] = '\0';
+        fclose(f);
+        debug("program(%i):\n%s",len,prog_str);
+        VALUE *val = eval_string(prog_str,static_scope,macro_map);
+        printVal(val,"result: ");
+        decRef(val);
+    }
 }

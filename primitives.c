@@ -29,7 +29,7 @@ VALUE* prog(NODE *args, NODE *scope) {
     VALUE *res = NIL;
     for (NODE *form = args; form; form = asNODE(form->addr)) {
         decRef(res);
-        res = evaluate(args->data,scope);
+        res = evaluate(form->data,scope);
     }
     return res;
 }
