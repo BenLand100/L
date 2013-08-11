@@ -44,6 +44,7 @@ void parser_init() {
     literal_name_map = binmap(newPRIMFUNC(PRIM_LAMBDA),newSTRING(strdup("LAMBDA")));
     addPrimFunc(LAMBDA,PRIM_LAMBDA);
     addPrimFunc(PROG,PRIM_PROG);
+    addPrimFunc(COND,PRIM_COND);
     addPrimFunc(MACRO,PRIM_MACRO);
     addPrimFunc(QUOTE,PRIM_QUOTE);
     addPrimFunc(NODE,PRIM_NODE);

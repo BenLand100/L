@@ -34,6 +34,21 @@ VALUE* prog(NODE *args, NODE *scope) {
     return res;
 }
 
+VALUE* cond(NODE *args, NODE *scope) {
+    while (args) {
+        NODE *test = asNODE(args->data);
+        if (list_length(test) != 2) error("Malformed conditional");
+        VALUE *v = evaluate(test->data,scope);
+        if (v) {
+            decRef(v);
+            return evaluate(asNODE(test->addr)->data,scope);
+        }
+        decRef(v);
+        args = asNODE(args->addr);
+    }
+    return NIL;
+}
+
 VALUE* lambda(NODE *args, NODE *scope) {
     incRef(args); 
     incRef(scope); 

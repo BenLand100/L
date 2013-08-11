@@ -129,6 +129,7 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
             switch (((PRIMFUNC*)func)->id) {
                 case PRIM_LAMBDA: prim_spec(lambda);
                 case PRIM_PROG: prim_spec(prog);
+                case PRIM_COND: prim_spec(cond);
                 case PRIM_LIST: prim_spec(list);
                 case PRIM_QUOTE: prim_spec(quote);
                 case PRIM_NODE: prim_func(node);

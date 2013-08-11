@@ -1,5 +1,5 @@
 ---dev priorities---
-implement COND and special looping forms
+implement looping forms
 implement backtick convention for use in macros
 start writing base language macros / functions in lang.l
 implement some print function
