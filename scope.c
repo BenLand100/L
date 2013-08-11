@@ -67,25 +67,36 @@ void scope_bind(SYMBOL *sym, VALUE *val, NODE *scope) {
 
 static bool scope_init_syms_flag = false;
 static T_SYMBOL sym_rest;
+static T_SYMBOL sym_optional;
 void scope_init_syms() {
     scope_init_syms_flag = true;
     sym_rest = intern("&REST");
+    sym_optional = intern("&OPTIONAL");
 }
 
 void scope_bindArgs(NODE *vars, NODE *vals, NODE *scope) {        
     if (!scope_init_syms_flag) scope_init_syms();
-    while (vars && vals) {
+    bool optional = false;
+    while (vars) {
         T_SYMBOL sym = asSYMBOL(vars->data)->sym;
         if (sym == sym_rest) {
             vars = asNODE(vars->addr);
+            if (vars->addr) error("&REST argument must be last");
             incRef(vals);
             scope_bind(asSYMBOL(vars->data),(VALUE*)vals,scope);
-            vars = vals = NIL;
-        } else {
-            scope_bind((SYMBOL*)vars->data,vals->data,scope);
+            return;
+        } else if (sym == sym_optional) {
             vars = asNODE(vars->addr);
-            vals = asNODE(vals->addr);
+            optional = true;
+            scope_bind((SYMBOL*)vars->data,vals ? vals->data : NIL,scope);
+        } else if (optional) {
+            scope_bind((SYMBOL*)vars->data,vals ? vals->data : NIL,scope);
+        } else {
+            if (!vals) error("Not enough arguments to fill variables");
+            scope_bind((SYMBOL*)vars->data,vals->data,scope);
         }
+        vars = asNODE(vars->addr);
+        if (vals) vals = asNODE(vals->addr);
     }
-    if (vars || vals) error("Mismatched number of arguments and variables");
+    if (vals) error("Too many arguments to fill variables");
 }
