@@ -1,0 +1,12 @@
+---dev priorities---
+macroexpand macro forms should be removed, not set to nil
+implement &rest arguments (keyword eventually?) 
+start writing base language macros / functions in lang.l
+
+---known bugs---
+
+---other stuff---
+ways to store state so core files need not be evaluated
+*how to handle symbols across versions
+*pointer address relocation?
+
