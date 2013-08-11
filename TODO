@@ -1,5 +1,5 @@
 ---dev priorities---
-macroexpand macro forms should be removed, not set to nil
+implement backtick convention for use in macros
 implement &rest arguments (keyword eventually?) 
 start writing base language macros / functions in lang.l
 

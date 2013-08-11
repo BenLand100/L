@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
         fread(prog_str,1,len,f);
         prog_str[len] = '\0';
         fclose(f);
-        debug("program(%i):\n%s",len,prog_str);
+        debug("program(%u):\n%s",(unsigned int)len,prog_str);
         VALUE *val = eval_string(prog_str,static_scope,macro_map);
         printVal(val,"result: ");
         decRef(val);

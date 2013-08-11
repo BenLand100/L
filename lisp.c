@@ -189,12 +189,32 @@ VALUE* evaluate(VALUE *val, NODE *scope) {
     }
 }
 
-#define expandlist(list) \
-    for (NODE *expander = list; expander; expander = asNODE(expander->addr)) { \
+#define expandlist(list,parent) \
+    for (NODE *expander = list, *last = NIL; expander; ) { \
         if (expander->data && expander->data->type == ID_NODE) { \
-            expander->data = macroexpand((NODE*)expander->data,scope,macros); \
+            if (expander->data) { \
+                expander->data = macroexpand(asNODE(expander->data),scope,macros); \
+                if (!expander->data) { \
+                    if (last) { \
+                        last->addr = expander->addr; \
+                        expander->addr = NIL; \
+                        decRef(expander); \
+                        expander = (NODE*)last->addr; \
+                        continue; \
+                    } else { \
+                        NODE *next = asNODE(list->addr); \
+                        list->addr = NIL; \
+                        decRef(list); \
+                        list = next; \
+                        expander = next; \
+                        continue; \
+                    } \
+                } \
+            } \
         } \
-    }
+        expander = asNODE((last = expander)->addr); \
+    } \
+    (parent)->addr = (VALUE*)list;
     
 
 VALUE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
@@ -208,7 +228,7 @@ VALUE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
                         return (VALUE*)form; //return unmodified form
                     case PRIM_LAMBDA: {
                         NODE *body = asNODE(asNODE(form->addr)->addr);
-                        expandlist(body);
+                        expandlist(body,(NODE*)form->addr);
                         return (VALUE*)form; //return expanded form
                     }
                     case PRIM_MACRO: { 
@@ -221,7 +241,7 @@ VALUE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
                         incRef(args);
                         decRef(form);
                         NODE *body = asNODE(args->addr);
-                        expandlist(body);
+                        expandlist(body,args);
                         incRef(scope); 
                         NODE *macro = newNODE(scope,args); 
                         debugVal(macro,"macro func: ");
@@ -231,14 +251,14 @@ VALUE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
                     }
                 }
                 NODE *args = asNODE(form->addr);
-                expandlist(args);
+                expandlist(args,form);
                 return (VALUE*)form; //return expanded form
             }
             case ID_SYMBOL: { //handle an invokable form w/ symbol
                 debug("detected possible macro\n");
                 NODE *args = asNODE(form->addr);
                 debugVal(args,"macro arguments: ");
-                expandlist(args);
+                expandlist(args,form);
                 debugVal(args,"expanded macro arguments: ");
                 NODE *macro = binmap_find(form->data,macros);
                 if (macro) {
@@ -254,7 +274,7 @@ VALUE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
                 VALUE *head = macroexpand((NODE*)form->data,scope,macros);
                 form->data = head;
                 NODE *args = asNODE(form->addr);
-                expandlist(args);
+                expandlist(args,form);
                 return (VALUE*)form;
             }
             //if its not a (non-nil) NODE, SYMBOL, or PRIMFUN in the eval tree, it's a syntax error.
