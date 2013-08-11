@@ -67,7 +67,7 @@ VALUE* node(NODE *args, NODE *scope) {
     if (list_length(args) != 2) error("SETD takes exactly 2 arguments");
     incRef(args->data);
     incRef(((NODE*)args->addr)->data);
-    return newNODE(args->data,((NODE*)args->addr)->data);
+    return (VALUE*)newNODE(args->data,((NODE*)args->addr)->data);
 }
 
 VALUE* data(NODE *args, NODE *scope) {

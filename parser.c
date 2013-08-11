@@ -59,6 +59,7 @@ void parser_init() {
     addPrimFunc(-,PRIM_SUB);
     addPrimFunc(*,PRIM_MUL);
     addPrimFunc(/,PRIM_DIV);
+    addPrimFunc(PRINT,PRIM_PRINT);
 }
 
 
@@ -136,6 +137,9 @@ NODE* parse(char **exp) {
                 head = list_reverse(head);
                 debugVal(head,"expression: ");
                 return head;
+            case ';':
+                while (**exp != '\0' && **exp != '\r' && **exp != '\n') (*exp)++;
+                break;
             case '\n':
             case '\r':
             case '\t':

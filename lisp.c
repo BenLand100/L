@@ -112,6 +112,15 @@ void print(VALUE *val) {
     }
 }
 
+VALUE* prim_print(NODE *args, NODE *scope) {
+    while (args) {
+        print(args->data);
+        args = asNODE(args->addr);
+    }
+    printf("\n");
+    return NIL;
+}
+
 #define prim_func(name) { \
     NODE *args_eval = list(args,scope); \
     VALUE *res = (VALUE*)name(args_eval,scope); \
@@ -143,19 +152,22 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
                 case PRIM_SUB: prim_func(sub);
                 case PRIM_MUL: prim_func(mul);
                 case PRIM_DIV: prim_func(div_);
+                case PRIM_PRINT: prim_func(prim_print);
                 default: error("Unhandled PRIMFUNC");
             }
         case ID_NODE: {
             NODE *fn_scope = scope_push(asNODE(((NODE*)func)->data));
-            NODE *fn_vars = asNODE(asNODE(((NODE*)func)->addr)->data);
-            if (!fn_vars->addr && fn_vars->data->type == ID_NODE) {
+            NODE *fn_vars = asNODE(((NODE*)func)->addr) ? asNODE(((NODE*)((NODE*)func)->addr)->data) : NIL;
+            if (fn_vars && !fn_vars->addr && fn_vars->data->type == ID_NODE) {
                 fn_vars = asNODE(fn_vars->data); 
                 scope_bindArgs(fn_vars,args,fn_scope); //quote args
             } else {
                 NODE *fn_args = list(args,scope); //eval args
+                debug("bind args\n");
                 scope_bindArgs(fn_vars,fn_args,fn_scope);
                 decRef(fn_args);
             }
+            debug("evaluate body\n");
             NODE *fn_body = asNODE(asNODE(((NODE*)func)->addr)->addr);
             while (fn_body->addr) {
                 decRef(evaluate(fn_body->data,fn_scope));

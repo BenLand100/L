@@ -32,8 +32,6 @@
 #define failNIL(val,...) if (!(val)) error(__VA_ARGS__);
 #define printVal(val,...) { printf(__VA_ARGS__); print((VALUE*)val); printf("\n");}
 
-#define DEBUG
-
 #ifdef DEBUG
     #define debug(...) { printf(__VA_ARGS__); }
     #define debugVal(val,...) { printf(__VA_ARGS__); print((VALUE*)val); printf("\n"); }

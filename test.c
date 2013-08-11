@@ -49,7 +49,6 @@ int main(int argc, char **argv) {
         fclose(f);
         debug("program(%u):\n%s",(unsigned int)len,prog_str);
         VALUE *val = eval_string(prog_str,static_scope,macro_map);
-        printVal(val,"result: ");
         decRef(val);
     }
 }

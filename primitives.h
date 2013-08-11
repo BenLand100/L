@@ -49,6 +49,9 @@
 #define PRIM_REF     PRIMS_SYMBOL+0
 #define PRIM_BIND    PRIMS_SYMBOL+1
 
+#define PRIMS_STRING PRIMS_SYMBOL+2
+#define PRIM_PRINT   PRIMS_STRING+0
+
 VALUE* lambda(NODE *args, NODE *scope);
 
 VALUE* prog(NODE *args, NODE *scope);
