@@ -25,6 +25,23 @@ NODE* list(NODE *args, NODE *scope) {
     return args ? newNODE(evaluate(args->data,scope),list(asNODE(args->addr),scope)) : NIL;
 }
 
+VALUE* prog(NODE *args, NODE *scope) {
+    VALUE *res = NIL;
+    for (NODE *form = args; form; form = asNODE(form->addr)) {
+        decRef(res);
+        res = evaluate(args->data,scope);
+    }
+    return res;
+}
+
+VALUE* lambda(NODE *args, NODE *scope) {
+    incRef(args); 
+    incRef(scope); 
+    NODE *f = newNODE(scope,args); 
+    f->datatype = DATA_FUNCTION; 
+    return (VALUE*)f;
+}
+
 VALUE* quote(NODE *args, NODE *scope) {
     if (args->addr) error("QUOTE takes exactly 1 argument");
     return deep_copy(args->data);

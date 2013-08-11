@@ -25,8 +25,9 @@
 #define PRIMS_INVOKE 0
 #define PRIM_LAMBDA  PRIMS_INVOKE+0
 #define PRIM_MACRO   PRIMS_INVOKE+1
+#define PRIM_PROG    PRIMS_INVOKE+2
 
-#define PRIMS_LIST   PRIMS_INVOKE+2
+#define PRIMS_LIST   PRIMS_INVOKE+3
 #define PRIM_LIST    PRIMS_LIST+0
 #define PRIM_QUOTE   PRIMS_LIST+1
 #define PRIM_DATA    PRIMS_LIST+2
@@ -45,6 +46,8 @@
 #define PRIM_BIND    PRIMS_SYMBOL+1
 
 NODE* list(NODE *args, NODE *scope);
+VALUE* prog(NODE *args, NODE *scope);
+VALUE* lambda(NODE *args, NODE *scope);
 VALUE* quote(NODE *args, NODE *scope);
 VALUE* data(NODE *args, NODE *scope);
 VALUE* addr(NODE *args, NODE *scope);

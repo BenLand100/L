@@ -127,7 +127,8 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
     switch (func->type) {
         case ID_PRIMFUNC:
             switch (((PRIMFUNC*)func)->id) {
-                case PRIM_LAMBDA: { incRef(args); incRef(scope); NODE *f = newNODE(scope,args); f->datatype = DATA_FUNCTION; return (VALUE*)f; }
+                case PRIM_LAMBDA: prim_spec(lambda);
+                case PRIM_PROG: prim_spec(prog);
                 case PRIM_LIST: prim_spec(list);
                 case PRIM_QUOTE: prim_spec(quote);
                 case PRIM_ADDR: prim_func(addr);
@@ -216,7 +217,7 @@ VALUE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
                         debugVal(name,"new macro: ")
                         incRef(name);
                         NODE *args = asNODE(asNODE(form->addr)->addr);
-                        args->data = newNODE(args->data,NIL);
+                        args->data = (VALUE*)newNODE(args->data,NIL);
                         incRef(args);
                         decRef(form);
                         NODE *body = asNODE(args->addr);
@@ -256,8 +257,8 @@ VALUE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
                 expandlist(args);
                 return (VALUE*)form;
             }
-            default:
-                error("Invalid syntax detected by MACROEXPAND");
+            //if its not a (non-nil) NODE, SYMBOL, or PRIMFUN in the eval tree, it's a syntax error.
         }
     }
+    error("Invalid syntax detected by MACROEXPAND");
 }

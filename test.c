@@ -21,24 +21,21 @@
 #include "scope.h"
 #include "parser.h"
 #include "listops.h"
+#include "binmap.h"
 
 // "('((x y) (+ x y)) 5 7)"
+// "(macro set (symbol value) (list 'seta (list 'ref (list 'quote symbol)) value)) (bind 'x NIL) (set x (+ 1 1))"
 
 int main(int argc, char **argv) {
-    NODE *forms = parseForms("(macro set (symbol value) (list 'seta (list 'ref (list 'quote symbol)) value)) (bind 'x NIL) (set x (+ 1 1))");
+    NODE *prog = parseForms("(+ 1 1)");
     NODE *macros = binmap(newSYMBOL(intern("NIL")),NIL);
     NODE *macro_scope = scope_push(NIL);
-    debugVal(forms,"before macroexpand: ");
-    forms = macroexpand(forms,macro_scope,macros);
-    debugVal(forms,"after macroexpand: ");
+    debugVal(prog,"before macroexpand: ");
+    prog = (NODE*)macroexpand(prog,macro_scope,macros);
+    debugVal(prog,"after macroexpand: ");
     NODE *scope = scope_push(NIL);
-    int len = list_length(forms);
-    printf("Evaluating %i forms\n",len);
-    debugVal(forms,"forms: ");
-    for (NODE *form = forms; form; form = (NODE*)form->addr) {
-        VALUE *val = evaluate(form->data,scope);
-        printVal(val);
-        decRef(val);
-    }
-    decRef(forms);
+    VALUE *val = evaluate((VALUE*)prog,scope);
+    printVal(val,"result: ");
+    decRef(val);
+    decRef(prog);
 }

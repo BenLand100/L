@@ -29,11 +29,18 @@
 #define false   0
 
 #define error(...) { printf("ERROR: "); printf(__VA_ARGS__); printf("\n"); exit(0); }
-#define debug(...) { printf(__VA_ARGS__); }
 #define failNIL(val,...) if (!(val)) error(__VA_ARGS__);
+#define printVal(val,...) { printf(__VA_ARGS__); print((VALUE*)val); printf("\n");}
 
-#define printVal(val) {print((VALUE*)val); printf("\n");}
-#define debugVal(val,...) { printf(__VA_ARGS__); printVal(val); }
+#define DEBUG
+
+#ifdef DEBUG
+    #define debug(...) { printf(__VA_ARGS__); }
+    #define debugVal(val,...) { printf(__VA_ARGS__); print((VALUE*)val); printf("\n"); }
+#else
+    #define debug(...) { }
+    #define debugVal(val,...) { }
+#endif
 
 #define as_type(_type) \
     static inline _type* as ## _type(void *val) { \
