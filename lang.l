@@ -3,6 +3,10 @@
 (macro defun (symbol args &rest body) (list 'bind (list 'quote symbol) (node 'lambda (node args body))))
 (macro call (func &rest args) (node func args))
 (macro if (test-case true-form &optional false-form) (node 'cond (node (list test-case true-form) (cond (false-form (node (list 't false-form)  NIL))))))
+;(let ((arg1 val1) arg2 (arg3 val3)) forms)
+(macro let (variables &rest forms) 
+    (bind 'map (lambda (func args-list) (if args-list (node (func (data args-list)) (map func (addr args-list))))))
+    (node (node 'lambda (node (map (lambda (variable) (data variable)) variables) forms)) (map (lambda (variable) (data (addr variable))) variables)) )
 
 ;language symbols
 (bind 't 't)
@@ -11,13 +15,15 @@
 (defun map (func args-list) (if args-list (node (func (data args-list)) (map func (addr args-list)))))
 
 ;test
-(print 'welcome 'to 'l)
-(print '(+ 1 1) '= (+ 1 1))
+;(print 'welcome 'to 'l)
+;(print '(+ 1 1) '= (+ 1 1))
 
-(defun inc (x) (+ 1 x))
-(defun sqr (x) (* x x))
+;(defun inc (x) (+ 1 x))
+;(defun sqr (x) (* x x))
 
-(bind 'vals '(1 2 3 4))
-(print 'vals vals)
-(print 'inc (map inc vals))
-(print 'sqr (map sqr vals))
+;(bind 'vals '(1 2 3 4))
+;(print 'vals vals)
+;(print 'inc (map inc vals))
+;(print 'sqr (map sqr vals))
+
+(print (let ((a 1) (b 2) (c 3)) (+ a b c)) )

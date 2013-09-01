@@ -291,7 +291,11 @@ VALUE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
                 expandlist(args,form);
                 return (VALUE*)form;
             }
-            //if its not a (non-nil) NODE, SYMBOL, or PRIMFUN in the eval tree, it's a syntax error.
+            default: { //just a list hidden in eval tree. expand it.
+                NODE *args = asNODE(form->addr);
+                expandlist(args,form);
+                return (VALUE*)form; //return expanded form
+            }
         }
     }
     error("Invalid syntax detected by MACROEXPAND");
