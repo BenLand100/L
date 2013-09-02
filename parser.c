@@ -33,33 +33,33 @@ static NODE *sym_map = NIL;
 static NODE *literal_map = NIL;
 static NODE *literal_name_map = NIL;
 
-#define addPrimFunc(sym,id) { \
-    binmap_put(newSYMBOL(intern(#sym)),newPRIMFUNC(id),literal_map); \
-    binmap_put(newPRIMFUNC(id),newSTRING(#sym),literal_name_map); \
+#define addPrimFunc(sym,spec,func) { \
+    binmap_put(newSYMBOL(intern(#sym)),newPRIMFUNC(spec,(NATIVE_FUNC)func),literal_map); \
+    binmap_put(newPRIMFUNC(spec,(NATIVE_FUNC)func),newSTRING(#sym),literal_name_map); \
 }
 void parser_init() {
     debug("Defining built-in symbols\n");
     sym_map = binmap(newSYMBOL(hash("NIL")),newSTRING("NIL"));
     literal_map = binmap(newSYMBOL(intern("NIL")),NIL);
-    literal_name_map = binmap(newPRIMFUNC(PRIM_LAMBDA),newSTRING(strdup("LAMBDA")));
-    addPrimFunc(LAMBDA,PRIM_LAMBDA);
-    addPrimFunc(PROG,PRIM_PROG);
-    addPrimFunc(COND,PRIM_COND);
-    addPrimFunc(MACRO,PRIM_MACRO);
-    addPrimFunc(QUOTE,PRIM_QUOTE);
-    addPrimFunc(NODE,PRIM_NODE);
-    addPrimFunc(LIST,PRIM_LIST);
-    addPrimFunc(ADDR,PRIM_ADDR);
-    addPrimFunc(DATA,PRIM_DATA);
-    addPrimFunc(SETA,PRIM_SETA);
-    addPrimFunc(SETD,PRIM_SETD);
-    addPrimFunc(REF,PRIM_REF);
-    addPrimFunc(BIND,PRIM_BIND);
-    addPrimFunc(+,PRIM_ADD);
-    addPrimFunc(-,PRIM_SUB);
-    addPrimFunc(*,PRIM_MUL);
-    addPrimFunc(/,PRIM_DIV);
-    addPrimFunc(PRINT,PRIM_PRINT);
+    literal_name_map = binmap(newPRIMFUNC(SPEC_LAMBDA,l_lambda),newSTRING(strdup("LAMBDA")));
+    addPrimFunc(LAMBDA,SPEC_LAMBDA,l_lambda);
+    addPrimFunc(PROG,SPEC_MACRO,l_prog);
+    addPrimFunc(COND,SPEC_MACRO,l_cond);
+    addPrimFunc(MACRO,SPEC_MACRODEF,l_macro);
+    addPrimFunc(QUOTE,SPEC_QUOTE,l_quote);
+    addPrimFunc(NODE,SPEC_FUNC,l_node);
+    addPrimFunc(LIST,SPEC_MACRO,l_list);
+    addPrimFunc(ADDR,SPEC_FUNC,l_addr);
+    addPrimFunc(DATA,SPEC_FUNC,l_data);
+    addPrimFunc(SETA,SPEC_FUNC,l_seta);
+    addPrimFunc(SETD,SPEC_FUNC,l_setd);
+    addPrimFunc(REF,SPEC_FUNC,l_ref);
+    addPrimFunc(BIND,SPEC_FUNC,l_bind);
+    addPrimFunc(+,SPEC_FUNC,l_add);
+    addPrimFunc(-,SPEC_FUNC,l_sub);
+    addPrimFunc(*,SPEC_FUNC,l_mul);
+    addPrimFunc(/,SPEC_FUNC,l_div);
+    addPrimFunc(PRINT,SPEC_FUNC,l_print);
 }
 
 
@@ -124,7 +124,7 @@ NODE* parse(char **exp) {
                 debug("to quote: %s\n",*exp);
                 NODE *quoted = parse(exp);
                 debugVal(quoted->data,"quoted: ");
-                list_push(newNODE(newPRIMFUNC(PRIM_QUOTE),newNODE(quoted->data,NIL)),&head);
+                list_push(newNODE(newPRIMFUNC(SPEC_QUOTE,l_quote),newNODE(quoted->data,NIL)),&head);
                 if (quoted->addr) head = list_join(list_reverse((NODE*)quoted->addr),head);
                 head = list_reverse(head);
                 debugVal(head,"expression: ");
@@ -218,5 +218,5 @@ NODE* parseForms(char *exp) {
     char *org = dup;
     NODE *forms = parse(&dup);
     free(org);
-    return newNODE(newPRIMFUNC(PRIM_PROG),forms);
+    return newNODE(newPRIMFUNC(SPEC_MACRO,l_prog),forms);
 }

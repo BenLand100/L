@@ -52,7 +52,7 @@ VALUE* deep_copy(VALUE *val) {
         case ID_STRING:
             return (VALUE*)newSTRING(strdup(((STRING*)val)->str));
         case ID_PRIMFUNC:
-            return (VALUE*)newPRIMFUNC(((PRIMFUNC*)val)->id);
+            return (VALUE*)newPRIMFUNC(((PRIMFUNC*)val)->spec,((PRIMFUNC*)val)->native);
     }
     error("Cannot copy a non-value");
 }
@@ -121,39 +121,18 @@ VALUE* prim_print(NODE *args, NODE *scope) {
     return NIL;
 }
 
-#define prim_func(name) { \
-    NODE *args_eval = list(args,scope); \
-    VALUE *res = (VALUE*)name(args_eval,scope); \
-    decRef(args_eval); \
-    return res; \
-}
-
-#define prim_spec(name) return (VALUE*)name(args,scope)
-
 VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
     debugVal(func,"function form: ");
     failNIL(func,"NIL cannot be invoked");
     switch (func->type) {
         case ID_PRIMFUNC:
-            switch (((PRIMFUNC*)func)->id) {
-                case PRIM_LAMBDA: prim_spec(lambda);
-                case PRIM_PROG: prim_spec(prog);
-                case PRIM_COND: prim_spec(cond);
-                case PRIM_LIST: prim_spec(list);
-                case PRIM_QUOTE: prim_spec(quote);
-                case PRIM_NODE: prim_func(node);
-                case PRIM_ADDR: prim_func(addr);
-                case PRIM_DATA: prim_func(data);
-                case PRIM_SETD: prim_func(setd);
-                case PRIM_SETA: prim_func(seta);
-                case PRIM_REF: prim_func(ref);
-                case PRIM_BIND: prim_func(bind);
-                case PRIM_ADD: prim_func(add);
-                case PRIM_SUB: prim_func(sub);
-                case PRIM_MUL: prim_func(mul);
-                case PRIM_DIV: prim_func(div_);
-                case PRIM_PRINT: prim_func(prim_print);
-                default: error("Unhandled PRIMFUNC");
+            if (((PRIMFUNC*)func)->spec) { //quote for all but SPEC_FUNC
+                return ((PRIMFUNC*)func)->native(args,scope);
+            } else {
+                NODE *args_eval = l_list(args,scope);
+                VALUE *res = ((PRIMFUNC*)func)->native(args_eval,scope);
+                decRef(args_eval);
+                return res;
             }
         case ID_NODE: {
             NODE *fn_scope = scope_push(asNODE(((NODE*)func)->data));
@@ -162,7 +141,7 @@ VALUE* call_function(VALUE *func, NODE *args, NODE *scope) {
                 fn_vars = asNODE(fn_vars->data); 
                 scope_bindArgs(fn_vars,args,fn_scope); //quote args
             } else {
-                NODE *fn_args = list(args,scope); //eval args
+                NODE *fn_args = l_list(args,scope); //eval args
                 debug("bind args\n");
                 scope_bindArgs(fn_vars,fn_args,fn_scope);
                 decRef(fn_args);
@@ -237,15 +216,15 @@ VALUE* macroexpand(NODE *form, NODE *scope, NODE *macros) {
     if (form->data) {
         switch (form->data->type) {
             case ID_PRIMFUNC: { //handle special form syntax
-                switch (((PRIMFUNC*)form->data)->id) {
-                    case PRIM_QUOTE:
+                switch (((PRIMFUNC*)form->data)->spec) {
+                    case SPEC_QUOTE:
                         return (VALUE*)form; //return unmodified form
-                    case PRIM_LAMBDA: {
+                    case SPEC_LAMBDA: {
                         NODE *body = asNODE(asNODE(form->addr)->addr);
                         expandlist(body,(NODE*)form->addr);
                         return (VALUE*)form; //return expanded form
                     }
-                    case PRIM_MACRO: { 
+                    case SPEC_MACRODEF: { 
                         if (list_length(form) < 3) error("MACRO takes at least three arguments");
                         SYMBOL *name = asSYMBOL(asNODE(form->addr)->data);
                         debugVal(name,"new macro: ")

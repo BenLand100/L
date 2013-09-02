@@ -32,8 +32,6 @@
 #define failNIL(val,...) if (!(val)) error(__VA_ARGS__);
 #define printVal(val,...) { printf(__VA_ARGS__); print((VALUE*)val); printf("\n");}
 
-#define DEBUG
-
 #ifdef DEBUG
     #define debug(...) { printf(__VA_ARGS__); }
     #define debugVal(val,...) { printf(__VA_ARGS__); print((VALUE*)val); printf("\n"); }
@@ -87,7 +85,6 @@
 
 typedef unsigned char T_TYPE;
 typedef unsigned int T_SYMBOL;
-typedef unsigned int T_PRIMFUNC;
 typedef int T_INTEGER;
 typedef double T_REAL;
 typedef char* T_STRING;
@@ -151,8 +148,45 @@ static inline int cmpNODE(NODE *a, NODE *b) {
 def_type(SYMBOL,sym,(int)a->sym - (int)b->sym)
 def_type(INTEGER,val,a->val - b->val)
 def_type(REAL,val,a->val - b->val)
-def_type(PRIMFUNC,id,(int)a->id - (int)b->id)
 def_type(STRING,str,strcmp(a->str,b->str))
+
+typedef VALUE* (*NATIVE_FUNC)(NODE *args, NODE *scope);
+
+typedef struct {
+    T_TYPE type;
+    size_t refc;
+    T_TYPE spec; //handles how function arguments are treated by evaluate and macroexpand
+    NATIVE_FUNC native;  
+} PRIMFUNC;
+
+//for macroexpand all arguments and evaluate all arguments
+#define SPEC_FUNC       0
+//for macroexpand all arguments and quote all arguments
+#define SPEC_MACRO      1
+//special quote form
+#define SPEC_QUOTE      2
+//special lambda form
+#define SPEC_LAMBDA     3
+//special macrodef form
+#define SPEC_MACRODEF   4
+
+static inline PRIMFUNC* asPRIMFUNC(void *val) { 
+    if (val && ((PRIMFUNC*)val)->type != ID_PRIMFUNC) error("PRIMFUNC expected");
+    return (PRIMFUNC*)val;
+}
+
+static inline PRIMFUNC* newPRIMFUNC(T_TYPE spec, NATIVE_FUNC native) {
+    PRIMFUNC *primfunc = (PRIMFUNC*)malloc(sizeof(PRIMFUNC));
+    primfunc->type = ID_PRIMFUNC;
+    primfunc->refc = 1;
+    primfunc->spec = spec;
+    primfunc->native = native;
+    return primfunc;
+}
+
+static inline int cmpPRIMFUNC(PRIMFUNC *a, PRIMFUNC *b) {
+    return (size_t)a->native - (size_t)b->native;
+}
 
 static inline int cmpVALUE(void *_a, void *_b) {
     VALUE *a = asVALUE(_a);

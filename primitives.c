@@ -21,11 +21,11 @@
 #include "listops.h"
 #include "scope.h"
 
-NODE* list(NODE *args, NODE *scope) {
-    return args ? newNODE(evaluate(args->data,scope),list(asNODE(args->addr),scope)) : NIL;
+NODE* l_list(NODE *args, NODE *scope) {
+    return args ? newNODE(evaluate(args->data,scope),l_list(asNODE(args->addr),scope)) : NIL;
 }
 
-VALUE* prog(NODE *args, NODE *scope) {
+VALUE* l_prog(NODE *args, NODE *scope) {
     VALUE *res = NIL;
     for (NODE *form = args; form; form = asNODE(form->addr)) {
         decRef(res);
@@ -34,7 +34,7 @@ VALUE* prog(NODE *args, NODE *scope) {
     return res;
 }
 
-VALUE* cond(NODE *args, NODE *scope) {
+VALUE* l_cond(NODE *args, NODE *scope) {
     while (args) {
         NODE *test = asNODE(args->data);
         if (list_length(test) != 2) error("Malformed conditional");
@@ -49,7 +49,11 @@ VALUE* cond(NODE *args, NODE *scope) {
     return NIL;
 }
 
-VALUE* lambda(NODE *args, NODE *scope) {
+VALUE* l_macro(NODE *args, NODE *scope) {
+    error("MACRO called as a function.");
+}
+
+VALUE* l_lambda(NODE *args, NODE *scope) {
     incRef(args); 
     incRef(scope); 
     NODE *f = newNODE(scope,args); 
@@ -57,34 +61,33 @@ VALUE* lambda(NODE *args, NODE *scope) {
     return (VALUE*)f;
 }
 
-VALUE* quote(NODE *args, NODE *scope) {
+VALUE* l_quote(NODE *args, NODE *scope) {
     if (args->addr) error("QUOTE takes exactly 1 argument");
     return deep_copy(args->data);
 }
 
-
-VALUE* node(NODE *args, NODE *scope) {
+VALUE* l_node(NODE *args, NODE *scope) {
     if (list_length(args) != 2) error("SETD takes exactly 2 arguments");
     incRef(args->data);
     incRef(((NODE*)args->addr)->data);
     return (VALUE*)newNODE(args->data,((NODE*)args->addr)->data);
 }
 
-VALUE* data(NODE *args, NODE *scope) {
+VALUE* l_data(NODE *args, NODE *scope) {
     if (args->addr) error("DATA takes exactly 1 argument");
     VALUE *res = asNODE(args->data)->data;
     incRef(res);
     return res;
 }
 
-VALUE* addr(NODE *args, NODE *scope) {
+VALUE* l_addr(NODE *args, NODE *scope) {
     if (args->addr) error("ADDR takes exactly 1 argument");
     VALUE *res = asNODE(args->data)->addr;
     incRef(res);
     return res;
 }
 
-VALUE* setd(NODE *args, NODE *scope) {
+VALUE* l_setd(NODE *args, NODE *scope) {
     if (list_length(args) != 2) error("SETD takes exactly 2 arguments");
     NODE *n = asNODE(args->data);
     VALUE *v = asNODE(args->addr)->data;
@@ -96,7 +99,7 @@ VALUE* setd(NODE *args, NODE *scope) {
     return v;
 }
 
-VALUE* seta(NODE *args, NODE *scope) {
+VALUE* l_seta(NODE *args, NODE *scope) {
     if (list_length(args) != 2) error("SETA takes exactly 2 arguments");
     NODE *n = asNODE(args->data);
     VALUE *v = asNODE(args->addr)->data;
@@ -108,14 +111,14 @@ VALUE* seta(NODE *args, NODE *scope) {
     return v;
 }
 
-VALUE* ref(NODE *args, NODE *scope) {
+VALUE* l_ref(NODE *args, NODE *scope) {
     if (args->addr) error("REF takes exactly 1 argument");
     NODE *ref = scope_ref(asSYMBOL(args->data),scope);
     failNIL(ref,"Cannot reference unbound symbol");
     return (VALUE*)ref;
 }
 
-VALUE* bind(NODE *args, NODE *scope) {
+VALUE* l_bind(NODE *args, NODE *scope) {
     if (list_length(args) != 2) error("BIND takes exactly 2 arguments");
     scope_bind(asSYMBOL(args->data),asNODE(args->addr)->data,scope);
     incRef(asNODE(args->addr)->data);
@@ -123,7 +126,7 @@ VALUE* bind(NODE *args, NODE *scope) {
 }
 
 
-VALUE* add(NODE *args, NODE *scope) {
+VALUE* l_add(NODE *args, NODE *scope) {
     debugVal(args,"add: ");
     bool real = false;
     T_REAL accum_r = 0;
@@ -149,7 +152,7 @@ VALUE* add(NODE *args, NODE *scope) {
     return real ? asVALUE(newREAL(accum_r)) : asVALUE(newINTEGER(accum_i));
 }
 
-VALUE* mul(NODE *args, NODE *scope) {
+VALUE* l_mul(NODE *args, NODE *scope) {
     debugVal(args,"mul: ");
     bool real = false;
     T_REAL accum_r = 1.0;
@@ -175,7 +178,7 @@ VALUE* mul(NODE *args, NODE *scope) {
     return real ? asVALUE(newREAL(accum_r)) : asVALUE(newINTEGER(accum_i));
 }
 
-VALUE* sub(NODE *args, NODE *scope) {
+VALUE* l_sub(NODE *args, NODE *scope) {
     debugVal(args,"sub: ");
     bool real = false;
     T_REAL accum_r;
@@ -209,7 +212,7 @@ VALUE* sub(NODE *args, NODE *scope) {
     return real ? asVALUE(newREAL(accum_r)) : asVALUE(newINTEGER(accum_i));
 }
 
-VALUE* div_(NODE *args, NODE *scope) {
+VALUE* l_div(NODE *args, NODE *scope) {
     debugVal(args,"div: ");
     bool real = false;
     T_REAL accum_r;
@@ -241,4 +244,20 @@ VALUE* div_(NODE *args, NODE *scope) {
         args = asNODE(args->addr);
     }    
     return real ? asVALUE(newREAL(accum_r)) : asVALUE(newINTEGER(accum_i));
+}
+
+
+VALUE* l_print(NODE *args, NODE *scope) {
+    if (!args) {
+        print(NIL);
+        return NIL;
+    }
+    while (args->addr) {
+        print(args->data);
+        args = asNODE(args->addr);
+    }
+    print(args->data);
+    printf("\n");
+    incRef(args->data);
+    return args->data;
 }

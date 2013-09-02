@@ -3,7 +3,6 @@ implement APPLY
 implement looping forms
 implement backtick convention for use in macros
 start writing base language macros / functions in lang.l
-implement some print function
 string parsing
 
 ---known bugs---
