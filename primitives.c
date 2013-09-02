@@ -20,6 +20,7 @@
 #include "primitives.h"
 #include "listops.h"
 #include "scope.h"
+#include "parser.h"
 
 NODE* l_list(NODE *args, NODE *scope) {
     return args ? newNODE(evaluate(args->data,scope),l_list(asNODE(args->addr),scope)) : NIL;
@@ -260,4 +261,9 @@ VALUE* l_print(NODE *args, NODE *scope) {
     printf("\n");
     incRef(args->data);
     return args->data;
+}
+
+VALUE* l_isnode(NODE *args, NODE *scope) {
+    if (!args || args->addr) error("ISNODE takes exactly 1 argument");
+    return args->data->type == ID_NODE ? (VALUE*)newSYMBOL(intern("T")) : NIL;
 }

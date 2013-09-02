@@ -60,6 +60,7 @@ void parser_init() {
     addPrimFunc(*,SPEC_FUNC,l_mul);
     addPrimFunc(/,SPEC_FUNC,l_div);
     addPrimFunc(PRINT,SPEC_FUNC,l_print);
+    addPrimFunc(ISNODE,SPEC_FUNC,l_isnode);
 }
 
 

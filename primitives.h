@@ -39,11 +39,13 @@ VALUE* l_setd(NODE *args, NODE *scope);
 VALUE* l_add(NODE *args, NODE *scope);
 VALUE* l_mul(NODE *args, NODE *scope);
 VALUE* l_sub(NODE *args, NODE *scope);
-VALUE* l_div(NODE *args, NODE *scope); //stdlib reserves div
+VALUE* l_div(NODE *args, NODE *scope);
 
 VALUE* l_ref(NODE *args, NODE *scope);
 VALUE* l_bind(NODE *args, NODE *scope);
 
 VALUE* l_print(NODE *args, NODE *scope);
+
+VALUE* l_isnode(NODE *args, NODE *scope);
 
 #endif 

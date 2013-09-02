@@ -2,10 +2,10 @@
 (macro set (symbol value) (list 'seta (list 'ref (list 'quote symbol)) value)) 
 (macro defun (symbol args &rest body) (list 'bind (list 'quote symbol) (node 'lambda (node args body))))
 (macro call (func &rest args) (node func args))
-(macro if (test-case true-form &optional false-form) (node 'cond (node (list test-case true-form) (cond (false-form (node (list 't false-form)  NIL))))))
+(macro if (test-case true-form &optional false-form) (node 'cond (node (list test-case true-form) (cond (false-form (node (list ''t false-form)  NIL))))))
 (macro let (variables &rest forms) 
     (bind 'map (lambda (func args-list) (if args-list (node (func (data args-list)) (map func (addr args-list))))))
-    (node (node 'lambda (node (map (lambda (variable) (data variable)) variables) forms)) (map (lambda (variable) (data (addr variable))) variables)) )
+    (node (node 'lambda (node (map (lambda (variable) (if (isnode variable) (data variable) variable)) variables) forms)) (map (lambda (variable) (if (isnode variable) (data (addr variable)) NIL)) variables)) )
 
 ;language symbols
 (bind 't 't)
@@ -26,3 +26,4 @@
 (print 'sqr (map sqr vals))
 
 (print 'let 'test (let ((a (lambda (x y) (+ x y))) (b 2) (c 3)) (a b c)) )
+(print 'let 'undef 'args (let (a b (c 1)) (list a b c)))
